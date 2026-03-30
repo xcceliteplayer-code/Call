@@ -1,0 +1,955 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>ZenCALL — Video Conference</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet" />
+<script src="https://cdnjs.cloudflare.com/ajax/libs/peerjs/1.5.2/peerjs.min.js"></script>
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg: #06080d;
+  --surface: #0c1018;
+  --surface2: #121820;
+  --surface3: #1a2230;
+  --border: #1e2d40;
+  --border2: #253545;
+  --accent: #00d9ff;
+  --accent-dim: rgba(0,217,255,0.12);
+  --accent2: #ff6b35;
+  --green: #00e676;
+  --red: #ff3d5a;
+  --yellow: #ffd600;
+  --text: #ddeeff;
+  --text2: #8aa0bc;
+  --muted: #3d5570;
+  --radius: 14px;
+}
+
+body {
+  font-family: 'Syne', sans-serif;
+  background: var(--bg);
+  color: var(--text);
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+/* Animated grid bg */
+.bg-grid {
+  position: fixed; inset: 0; z-index: 0;
+  background-image:
+    linear-gradient(rgba(0,217,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,217,255,0.04) 1px, transparent 1px);
+  background-size: 64px 64px;
+  pointer-events: none;
+}
+
+.bg-glow {
+  position: fixed; inset: 0; z-index: 0; pointer-events: none;
+  background:
+    radial-gradient(ellipse 70% 50% at 20% 10%, rgba(0,217,255,0.06) 0%, transparent 60%),
+    radial-gradient(ellipse 50% 40% at 80% 90%, rgba(255,107,53,0.05) 0%, transparent 60%);
+}
+
+/* ─── LOBBY ─────────────────────────────────────── */
+#lobby {
+  position: relative; z-index: 1;
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 2rem;
+  gap: 0;
+  animation: fadeIn 0.5s ease;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(16px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+.brand {
+  text-align: center;
+  margin-bottom: 2.5rem;
+}
+
+.brand-logo {
+  font-size: 2.8rem;
+  font-weight: 800;
+  letter-spacing: -2px;
+  line-height: 1;
+  color: var(--text);
+}
+
+.brand-logo span {
+  color: var(--accent);
+  text-shadow: 0 0 30px rgba(0,217,255,0.5);
+}
+
+.brand-sub {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 4px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-top: 0.4rem;
+}
+
+.card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 20px;
+  padding: 2.25rem;
+  width: 100%;
+  max-width: 400px;
+  position: relative;
+  overflow: hidden;
+  box-shadow: 0 24px 64px rgba(0,0,0,0.5);
+}
+
+.card::before {
+  content: '';
+  position: absolute; top: 0; left: 10%; right: 10%; height: 1px;
+  background: linear-gradient(90deg, transparent, var(--accent), transparent);
+  opacity: 0.6;
+}
+
+.section-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.6rem;
+  letter-spacing: 3px;
+  color: var(--muted);
+  text-transform: uppercase;
+  margin-bottom: 0.65rem;
+}
+
+.new-room-area { margin-bottom: 1.5rem; }
+
+.code-box {
+  background: var(--surface2);
+  border: 1px dashed var(--border2);
+  border-radius: 12px;
+  padding: 1rem 1.25rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.75rem;
+  transition: border-color 0.3s;
+}
+
+.code-box:hover { border-color: var(--accent); }
+
+.code-value {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1.75rem;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 6px;
+  text-shadow: 0 0 20px rgba(0,217,255,0.3);
+}
+
+.copy-btn {
+  background: none;
+  border: 1px solid var(--border2);
+  border-radius: 8px;
+  color: var(--text2);
+  padding: 0.35rem 0.75rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 1px;
+  cursor: pointer;
+  transition: all 0.2s;
+  text-transform: uppercase;
+}
+
+.copy-btn:hover { border-color: var(--accent); color: var(--accent); }
+.copy-btn.copied { border-color: var(--green); color: var(--green); }
+
+.divider {
+  display: flex; align-items: center; gap: 0.75rem;
+  margin: 1.5rem 0;
+  color: var(--muted);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  letter-spacing: 2px;
+}
+.divider::before, .divider::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+.join-area { }
+
+.input-row {
+  display: flex; gap: 0.5rem;
+}
+
+input[type="text"] {
+  flex: 1;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 10px;
+  padding: 0.8rem 1rem;
+  color: var(--text);
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 1rem;
+  letter-spacing: 4px;
+  text-transform: uppercase;
+  outline: none;
+  transition: border-color 0.2s, box-shadow 0.2s;
+  width: 100%;
+}
+
+input[type="text"]::placeholder {
+  color: var(--muted);
+  letter-spacing: 1px;
+  font-size: 0.8rem;
+  text-transform: none;
+}
+
+input[type="text"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(0,217,255,0.1);
+}
+
+.btn {
+  border: none;
+  border-radius: 10px;
+  font-family: 'Syne', sans-serif;
+  font-weight: 700;
+  font-size: 0.9rem;
+  cursor: pointer;
+  transition: all 0.2s;
+  white-space: nowrap;
+  letter-spacing: 0.3px;
+}
+
+.btn-full { width: 100%; padding: 0.85rem; }
+.btn-sm { padding: 0.8rem 1.1rem; }
+
+.btn-accent {
+  background: var(--accent);
+  color: #000;
+}
+.btn-accent:hover {
+  filter: brightness(1.1);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 24px rgba(0,217,255,0.3);
+}
+
+.btn-outline {
+  background: var(--surface2);
+  color: var(--text);
+  border: 1px solid var(--border2);
+}
+.btn-outline:hover {
+  border-color: var(--accent);
+  color: var(--accent);
+  transform: translateY(-1px);
+}
+
+.btn-red {
+  background: var(--red);
+  color: #fff;
+}
+.btn-red:hover { filter: brightness(1.1); }
+
+.btn-icon {
+  background: var(--surface3);
+  border: 1px solid var(--border2);
+  color: var(--text);
+  border-radius: 50%;
+  width: 52px; height: 52px;
+  display: flex; align-items: center; justify-content: center;
+  cursor: pointer;
+  transition: all 0.2s;
+  font-size: 1.2rem;
+}
+
+.btn-icon:hover { border-color: var(--accent); color: var(--accent); }
+.btn-icon.active { background: var(--accent-dim); border-color: var(--accent); color: var(--accent); }
+.btn-icon.danger { background: rgba(255,61,90,0.15); border-color: var(--red); color: var(--red); }
+
+.status-bar {
+  margin-top: 1rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--muted);
+  text-align: center;
+  min-height: 1.2em;
+  transition: color 0.3s;
+}
+
+.status-bar.ok { color: var(--green); }
+.status-bar.err { color: var(--red); }
+.status-bar.loading { color: var(--accent); }
+
+/* ─── CALL ROOM ──────────────────────────────────── */
+#callRoom {
+  display: none;
+  position: fixed; inset: 0; z-index: 10;
+  flex-direction: column;
+  background: var(--bg);
+  animation: fadeIn 0.4s ease;
+}
+#callRoom.active { display: flex; }
+
+.call-header {
+  display: flex; align-items: center; justify-content: space-between;
+  padding: 0.85rem 1.5rem;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  gap: 1rem;
+}
+
+.call-brand {
+  font-weight: 800;
+  font-size: 1.1rem;
+  letter-spacing: -0.5px;
+}
+.call-brand span { color: var(--accent); }
+
+.call-room-info {
+  display: flex; align-items: center; gap: 0.6rem;
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.4rem 0.9rem;
+}
+
+.live-dot {
+  width: 7px; height: 7px;
+  border-radius: 50%;
+  background: var(--green);
+  animation: pulse 1.8s ease infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.5; transform: scale(0.8); }
+}
+
+.room-label {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text2);
+}
+
+.room-code-badge {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.85rem;
+  font-weight: 600;
+  color: var(--accent);
+  letter-spacing: 3px;
+}
+
+.participant-count {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.7rem;
+  color: var(--text2);
+  background: var(--surface2);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 0.4rem 0.9rem;
+}
+
+/* Video grid */
+.video-container {
+  flex: 1;
+  padding: 1rem;
+  overflow-y: auto;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+  align-content: flex-start;
+  justify-content: center;
+}
+
+.video-wrapper {
+  position: relative;
+  border-radius: 12px;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  transition: all 0.3s;
+  aspect-ratio: 16/9;
+}
+
+/* Dynamic sizing based on count */
+.video-container.count-1 .video-wrapper { width: min(100%, 800px); }
+.video-container.count-2 .video-wrapper { width: calc(50% - 0.375rem); }
+.video-container.count-3 .video-wrapper,
+.video-container.count-4 .video-wrapper { width: calc(50% - 0.375rem); }
+.video-container.count-5 .video-wrapper,
+.video-container.count-6 .video-wrapper { width: calc(33.33% - 0.5rem); }
+.video-container.count-many .video-wrapper { width: calc(33.33% - 0.5rem); }
+
+.video-wrapper:hover { border-color: var(--accent); }
+.video-wrapper.local-video { border-color: var(--accent); }
+.video-wrapper.local-video::before {
+  content: '';
+  position: absolute; inset: 0;
+  border: 2px solid var(--accent);
+  border-radius: 12px;
+  opacity: 0.4;
+  pointer-events: none;
+  z-index: 3;
+}
+
+video {
+  width: 100%; height: 100%;
+  object-fit: cover;
+  display: block;
+  border-radius: 12px;
+}
+
+.video-label {
+  position: absolute;
+  bottom: 0.6rem; left: 0.75rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.65rem;
+  color: rgba(255,255,255,0.85);
+  background: rgba(0,0,0,0.55);
+  backdrop-filter: blur(6px);
+  border-radius: 5px;
+  padding: 0.25rem 0.55rem;
+  letter-spacing: 1px;
+}
+
+.muted-overlay {
+  position: absolute;
+  top: 0.6rem; right: 0.6rem;
+  background: rgba(255,61,90,0.85);
+  border-radius: 50%;
+  width: 28px; height: 28px;
+  display: none;
+  align-items: center; justify-content: center;
+  font-size: 0.75rem;
+  z-index: 4;
+}
+.muted-overlay.show { display: flex; }
+
+.cam-off-overlay {
+  position: absolute; inset: 0;
+  background: var(--surface2);
+  display: none;
+  align-items: center; justify-content: center;
+  flex-direction: column;
+  gap: 0.5rem;
+  z-index: 4;
+  border-radius: 12px;
+}
+.cam-off-overlay.show { display: flex; }
+.cam-off-overlay .avatar {
+  width: 64px; height: 64px;
+  border-radius: 50%;
+  background: var(--surface3);
+  border: 2px solid var(--border2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 1.75rem;
+}
+.cam-off-overlay .name {
+  font-size: 0.75rem;
+  color: var(--text2);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+/* Controls */
+.call-controls {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.85rem;
+  padding: 1.25rem;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  flex-shrink: 0;
+}
+
+.ctrl-separator {
+  width: 1px; height: 36px;
+  background: var(--border);
+}
+
+/* Toast */
+.toast-container {
+  position: fixed;
+  bottom: 6rem; left: 50%;
+  transform: translateX(-50%);
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  pointer-events: none;
+}
+
+.toast {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 10px;
+  padding: 0.65rem 1.25rem;
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 0.75rem;
+  color: var(--text);
+  box-shadow: 0 8px 24px rgba(0,0,0,0.4);
+  animation: toastIn 0.3s ease, toastOut 0.3s ease 2.5s forwards;
+  white-space: nowrap;
+  text-align: center;
+}
+
+.toast.join { border-color: var(--green); color: var(--green); }
+.toast.leave { border-color: var(--red); color: var(--red); }
+
+@keyframes toastIn {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes toastOut {
+  from { opacity: 1; }
+  to   { opacity: 0; }
+}
+
+/* Spinner */
+.spinner {
+  width: 18px; height: 18px;
+  border: 2px solid rgba(0,217,255,0.2);
+  border-top-color: var(--accent);
+  border-radius: 50%;
+  animation: spin 0.7s linear infinite;
+  display: inline-block;
+  vertical-align: middle;
+  margin-right: 6px;
+}
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* Modal overlay */
+.modal-overlay {
+  display: none;
+  position: fixed; inset: 0; z-index: 50;
+  background: rgba(0,0,0,0.7);
+  backdrop-filter: blur(4px);
+  align-items: center; justify-content: center;
+}
+.modal-overlay.show { display: flex; }
+.modal-box {
+  background: var(--surface);
+  border: 1px solid var(--border2);
+  border-radius: 16px;
+  padding: 2rem;
+  max-width: 340px; width: 90%;
+  text-align: center;
+  position: relative;
+}
+.modal-box h3 { font-size: 1.2rem; margin-bottom: 0.5rem; }
+.modal-box p { color: var(--text2); font-size: 0.85rem; margin-bottom: 1.5rem; line-height: 1.6; }
+.modal-box .modal-code {
+  font-family: 'JetBrains Mono', monospace;
+  font-size: 2rem;
+  color: var(--accent);
+  letter-spacing: 8px;
+  font-weight: 600;
+  text-shadow: 0 0 20px rgba(0,217,255,0.4);
+  margin-bottom: 1.5rem;
+  display: block;
+}
+
+@media (max-width: 600px) {
+  .call-header { flex-wrap: wrap; gap: 0.5rem; }
+  .video-container.count-2 .video-wrapper,
+  .video-container.count-3 .video-wrapper,
+  .video-container.count-4 .video-wrapper { width: 100%; }
+  .call-controls { gap: 0.6rem; }
+  .btn-icon { width: 46px; height: 46px; font-size: 1.05rem; }
+}
+</style>
+</head>
+<body>
+
+<div class="bg-grid"></div>
+<div class="bg-glow"></div>
+
+<!-- ═══ LOBBY ═══ -->
+<div id="lobby">
+  <div class="brand">
+    <div class="brand-logo">Zen<span>CALL</span></div>
+    <div class="brand-sub">WebRTC · P2P · No Sign-up</div>
+  </div>
+
+  <div class="card">
+    <!-- Buat room baru -->
+    <div class="new-room-area">
+      <div class="section-label">Room Baru</div>
+      <div class="code-box">
+        <span class="code-value" id="generatedCode">——</span>
+        <button class="copy-btn" id="copyCodeBtn" onclick="copyCode()">COPY</button>
+      </div>
+      <button class="btn btn-accent btn-full" id="startBtn" onclick="startRoom()">
+        🎥 &nbsp;Buat &amp; Mulai Room
+      </button>
+    </div>
+
+    <div class="divider">atau</div>
+
+    <!-- Join room -->
+    <div class="join-area">
+      <div class="section-label">Join Room</div>
+      <div class="input-row">
+        <input type="text" id="joinCodeInput" maxlength="6" placeholder="Masukkan kode room" />
+        <button class="btn btn-outline btn-sm" onclick="joinRoom()">Join</button>
+      </div>
+    </div>
+
+    <div class="status-bar" id="statusBar">Siap — masukkan nama untuk lanjut</div>
+  </div>
+</div>
+
+<!-- ═══ CALL ROOM ═══ -->
+<div id="callRoom">
+  <div class="call-header">
+    <div class="call-brand">Zen<span>CALL</span></div>
+    <div class="call-room-info">
+      <div class="live-dot"></div>
+      <span class="room-label">ROOM</span>
+      <span class="room-code-badge" id="headerCode">——</span>
+    </div>
+    <div class="participant-count" id="participantCount">1 peserta</div>
+  </div>
+
+  <div class="video-container count-1" id="videoGrid"></div>
+
+  <div class="call-controls">
+    <button class="btn-icon" id="micBtn" title="Mute/Unmute" onclick="toggleMic()">🎤</button>
+    <button class="btn-icon" id="camBtn" title="Cam On/Off" onclick="toggleCam()">📷</button>
+    <div class="ctrl-separator"></div>
+    <button class="btn-icon" title="Share kode room" onclick="showShareModal()">🔗</button>
+    <div class="ctrl-separator"></div>
+    <button class="btn-icon danger" title="Keluar call" onclick="leaveCall()">📵</button>
+  </div>
+</div>
+
+<!-- Share Modal -->
+<div class="modal-overlay" id="shareModal">
+  <div class="modal-box">
+    <h3>Bagikan Room</h3>
+    <p>Kasih kode ini ke teman kamu biar bisa join:</p>
+    <span class="modal-code" id="modalCode"></span>
+    <button class="btn btn-accent btn-full" onclick="copyModalCode()">📋 &nbsp;Copy Kode</button>
+    <br><br>
+    <button class="btn btn-outline btn-full" onclick="closeShareModal()">Tutup</button>
+  </div>
+</div>
+
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
+
+<script>
+// ═══ STATE ════════════════════════════════════════════
+let peer = null;
+let localStream = null;
+let myCode = '';
+let currentRoom = '';
+let connections = {}; // peerId -> { call, stream }
+let isMuted = false;
+let isCamOff = false;
+let myPeerId = '';
+
+// ═══ INIT ═════════════════════════════════════════════
+window.onload = () => {
+  generateCode();
+};
+
+function generateCode() {
+  const chars = 'ABCDEFGHJKLMNPQRSTUVWXYZ23456789';
+  let code = '';
+  for (let i = 0; i < 6; i++) code += chars[Math.floor(Math.random() * chars.length)];
+  myCode = code;
+  document.getElementById('generatedCode').textContent = code;
+}
+
+// ═══ COPY CODE ════════════════════════════════════════
+function copyCode() {
+  navigator.clipboard.writeText(myCode).then(() => {
+    const btn = document.getElementById('copyCodeBtn');
+    btn.textContent = 'COPIED!';
+    btn.classList.add('copied');
+    setTimeout(() => { btn.textContent = 'COPY'; btn.classList.remove('copied'); }, 1500);
+  });
+}
+
+// ═══ START ROOM (host) ════════════════════════════════
+async function startRoom() {
+  setStatus('Mengakses kamera...', 'loading');
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+  } catch (e) {
+    setStatus('❌ Tidak bisa akses kamera/mikrofon', 'err');
+    return;
+  }
+
+  currentRoom = myCode;
+  const peerId = 'ZENCALL-' + myCode + '-HOST';
+  setStatus('<span class="spinner"></span>Menghubungkan...', 'loading');
+
+  peer = new Peer(peerId, { debug: 0 });
+
+  peer.on('open', (id) => {
+    myPeerId = id;
+    enterCallRoom(myCode);
+    addLocalVideo();
+    setStatus('', '');
+  });
+
+  peer.on('call', (call) => {
+    call.answer(localStream);
+    handleCall(call);
+  });
+
+  peer.on('error', (e) => {
+    if (e.type === 'unavailable-id') {
+      // Host already exists, join as participant instead
+      joinAsParticipant(myCode);
+    } else {
+      setStatus('❌ Error: ' + e.message, 'err');
+    }
+  });
+}
+
+// ═══ JOIN ROOM ════════════════════════════════════════
+async function joinRoom() {
+  const code = document.getElementById('joinCodeInput').value.toUpperCase().trim();
+  if (code.length < 4) {
+    setStatus('❌ Kode room tidak valid', 'err');
+    return;
+  }
+  setStatus('Mengakses kamera...', 'loading');
+  try {
+    localStream = await navigator.mediaDevices.getUserMedia({ video: true, audio: true });
+  } catch (e) {
+    setStatus('❌ Tidak bisa akses kamera/mikrofon', 'err');
+    return;
+  }
+  currentRoom = code;
+  joinAsParticipant(code);
+}
+
+function joinAsParticipant(code) {
+  setStatus('<span class="spinner"></span>Joining room...', 'loading');
+
+  const randSuffix = Math.random().toString(36).substr(2, 6).toUpperCase();
+  const peerId = 'ZENCALL-' + code + '-' + randSuffix;
+
+  peer = new Peer(peerId, { debug: 0 });
+
+  peer.on('open', (id) => {
+    myPeerId = id;
+    enterCallRoom(code);
+    addLocalVideo();
+
+    // Call host
+    callPeer('ZENCALL-' + code + '-HOST');
+
+    // Listen for incoming calls from others
+    peer.on('call', (call) => {
+      call.answer(localStream);
+      handleCall(call);
+    });
+
+    setStatus('', '');
+  });
+
+  peer.on('error', (e) => {
+    setStatus('❌ Room tidak ditemukan atau error', 'err');
+    console.error(e);
+  });
+}
+
+// ═══ CALL PEER ════════════════════════════════════════
+function callPeer(targetPeerId) {
+  if (connections[targetPeerId]) return;
+  const call = peer.call(targetPeerId, localStream);
+  if (!call) return;
+  handleCall(call);
+}
+
+function handleCall(call) {
+  connections[call.peer] = { call, stream: null };
+
+  call.on('stream', (remoteStream) => {
+    if (connections[call.peer] && connections[call.peer].stream) return;
+    connections[call.peer].stream = remoteStream;
+    addRemoteVideo(call.peer, remoteStream);
+    updateParticipantCount();
+    showToast('👤 Peserta baru bergabung', 'join');
+  });
+
+  call.on('close', () => {
+    removeVideo(call.peer);
+    delete connections[call.peer];
+    updateParticipantCount();
+    showToast('👋 Peserta keluar', 'leave');
+  });
+
+  call.on('error', (e) => {
+    console.error('Call error:', e);
+    removeVideo(call.peer);
+    delete connections[call.peer];
+    updateParticipantCount();
+  });
+}
+
+// ═══ VIDEO ELEMENTS ══════════════════════════════════
+function addLocalVideo() {
+  const grid = document.getElementById('videoGrid');
+  const wrapper = document.createElement('div');
+  wrapper.className = 'video-wrapper local-video';
+  wrapper.id = 'video-local';
+  wrapper.innerHTML = `
+    <video id="vid-local" autoplay muted playsinline></video>
+    <div class="video-label">Kamu</div>
+    <div class="muted-overlay" id="muted-local">🔇</div>
+    <div class="cam-off-overlay" id="camoff-local">
+      <div class="avatar">👤</div>
+      <div class="name">Kamera Mati</div>
+    </div>
+  `;
+  grid.appendChild(wrapper);
+  document.getElementById('vid-local').srcObject = localStream;
+  updateGridLayout();
+}
+
+function addRemoteVideo(peerId, stream) {
+  if (document.getElementById('video-' + CSS.escape(peerId))) return;
+  const grid = document.getElementById('videoGrid');
+  const shortId = peerId.split('-').pop();
+  const wrapper = document.createElement('div');
+  wrapper.className = 'video-wrapper';
+  wrapper.id = 'video-' + peerId;
+  wrapper.innerHTML = `
+    <video id="vid-${peerId}" autoplay playsinline></video>
+    <div class="video-label">Peserta · ${shortId}</div>
+    <div class="cam-off-overlay" id="camoff-${peerId}">
+      <div class="avatar">👤</div>
+      <div class="name">${shortId}</div>
+    </div>
+  `;
+  grid.appendChild(wrapper);
+  const vid = document.getElementById('vid-' + peerId);
+  vid.srcObject = stream;
+  updateGridLayout();
+}
+
+function removeVideo(peerId) {
+  const el = document.getElementById('video-' + peerId);
+  if (el) el.remove();
+  updateGridLayout();
+}
+
+function updateGridLayout() {
+  const grid = document.getElementById('videoGrid');
+  const count = grid.querySelectorAll('.video-wrapper').length;
+  grid.className = 'video-container';
+  if (count <= 4) grid.classList.add('count-' + count);
+  else if (count <= 6) grid.classList.add('count-' + count);
+  else grid.classList.add('count-many');
+}
+
+function updateParticipantCount() {
+  const total = Object.keys(connections).length + 1;
+  document.getElementById('participantCount').textContent = total + ' peserta';
+}
+
+// ═══ UI TRANSITIONS ══════════════════════════════════
+function enterCallRoom(code) {
+  document.getElementById('headerCode').textContent = code;
+  document.getElementById('modalCode').textContent = code;
+  document.getElementById('lobby').style.display = 'none';
+  document.getElementById('callRoom').classList.add('active');
+}
+
+// ═══ CONTROLS ════════════════════════════════════════
+function toggleMic() {
+  isMuted = !isMuted;
+  localStream.getAudioTracks().forEach(t => t.enabled = !isMuted);
+  const btn = document.getElementById('micBtn');
+  btn.textContent = isMuted ? '🔇' : '🎤';
+  btn.classList.toggle('active', isMuted);
+  const indicator = document.getElementById('muted-local');
+  if (indicator) indicator.classList.toggle('show', isMuted);
+}
+
+function toggleCam() {
+  isCamOff = !isCamOff;
+  localStream.getVideoTracks().forEach(t => t.enabled = !isCamOff);
+  const btn = document.getElementById('camBtn');
+  btn.textContent = isCamOff ? '🚫' : '📷';
+  btn.classList.toggle('active', isCamOff);
+  const overlay = document.getElementById('camoff-local');
+  if (overlay) overlay.classList.toggle('show', isCamOff);
+}
+
+function leaveCall() {
+  if (peer) { peer.destroy(); peer = null; }
+  if (localStream) {
+    localStream.getTracks().forEach(t => t.stop());
+    localStream = null;
+  }
+  connections = {};
+  document.getElementById('videoGrid').innerHTML = '';
+  document.getElementById('callRoom').classList.remove('active');
+  document.getElementById('lobby').style.display = '';
+  document.getElementById('lobby').style.display = 'flex';
+  isMuted = false; isCamOff = false;
+  document.getElementById('micBtn').textContent = '🎤';
+  document.getElementById('camBtn').textContent = '📷';
+  document.getElementById('micBtn').classList.remove('active');
+  document.getElementById('camBtn').classList.remove('active');
+  generateCode();
+  setStatus('Call berakhir. Room baru disiapkan.', 'ok');
+}
+
+// ═══ SHARE MODAL ═════════════════════════════════════
+function showShareModal() {
+  document.getElementById('shareModal').classList.add('show');
+}
+function closeShareModal() {
+  document.getElementById('shareModal').classList.remove('show');
+}
+function copyModalCode() {
+  navigator.clipboard.writeText(currentRoom).then(() => {
+    showToast('✅ Kode disalin!', 'join');
+    closeShareModal();
+  });
+}
+
+// ═══ TOAST ════════════════════════════════════════════
+function showToast(msg, type = '') {
+  const container = document.getElementById('toastContainer');
+  const toast = document.createElement('div');
+  toast.className = 'toast ' + type;
+  toast.textContent = msg;
+  container.appendChild(toast);
+  setTimeout(() => toast.remove(), 3000);
+}
+
+// ═══ STATUS BAR ══════════════════════════════════════
+function setStatus(msg, type = '') {
+  const bar = document.getElementById('statusBar');
+  bar.innerHTML = msg;
+  bar.className = 'status-bar ' + type;
+}
+
+// ═══ INPUT ENTER KEY ═════════════════════════════════
+document.getElementById('joinCodeInput').addEventListener('keydown', e => {
+  if (e.key === 'Enter') joinRoom();
+});
+
+// ═══ MODAL BACKDROP CLOSE ════════════════════════════
+document.getElementById('shareModal').addEventListener('click', function(e) {
+  if (e.target === this) closeShareModal();
+});
+</script>
+</body>
+</html>
