@@ -1,1411 +1,749 @@
 <!DOCTYPE html>
 <html lang="id">
 <head>
-<meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>NexCall — Video Call & Chat</title>
-<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet">
-<style>
-  :root {
-    --bg: #0a0b0f;
-    --surface: #111318;
-    --surface2: #181b22;
-    --surface3: #1e2230;
-    --border: rgba(255,255,255,0.07);
-    --accent: #4f8ef7;
-    --accent2: #7c3aed;
-    --green: #22c55e;
-    --red: #ef4444;
-    --yellow: #f59e0b;
-    --text: #f0f2f7;
-    --text2: #8b90a0;
-    --text3: #555b6e;
-    --radius: 16px;
-    --shadow: 0 8px 32px rgba(0,0,0,0.4);
-  }
-  * { margin:0; padding:0; box-sizing:border-box; }
-  body { font-family:'DM Sans',sans-serif; background:var(--bg); color:var(--text); height:100vh; overflow:hidden; display:flex; }
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>ChatVerse — Meet Strangers Worldwide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;700;800&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,400&display=swap" rel="stylesheet" />
+  <style>
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
 
-  /* SIDEBAR */
-  .sidebar {
-    width: 72px; min-width:72px; background:var(--surface); border-right:1px solid var(--border);
-    display:flex; flex-direction:column; align-items:center; padding:16px 0; gap:8px; z-index:10;
-    transition: width .3s ease;
-  }
-  .sidebar.open { width: 240px; }
-  .logo { width:40px; height:40px; background:linear-gradient(135deg,var(--accent),var(--accent2)); border-radius:12px;
-    display:flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif; font-weight:800; font-size:16px; color:#fff; margin-bottom:8px; flex-shrink:0; }
-  .nav-btn { width:44px; height:44px; border-radius:12px; border:none; background:transparent; color:var(--text2); cursor:pointer;
-    display:flex; align-items:center; justify-content:center; transition:.2s; position:relative; flex-shrink:0; font-size:20px; }
-  .nav-btn:hover, .nav-btn.active { background:var(--surface3); color:var(--accent); }
-  .nav-btn .badge { position:absolute; top:6px; right:6px; width:8px; height:8px; background:var(--red); border-radius:50%; border:2px solid var(--surface); }
-  .sidebar-spacer { flex:1; }
-  .avatar-sm { width:36px; height:36px; border-radius:50%; background:linear-gradient(135deg,#f59e0b,#ef4444); display:flex; align-items:center; justify-content:center; font-weight:700; font-size:13px; cursor:pointer; }
+    :root {
+      --blue: #1a6ef5;
+      --purple: #6b3ff0;
+      --green: #7dd3a8;
+      --bg: #0a0d14;
+      --surface: #0d1120;
+      --surface2: #111827;
+      --border: rgba(255,255,255,0.08);
+      --border2: rgba(255,255,255,0.12);
+      --text: #e8eaf0;
+      --muted: #7a85a0;
+      --hint: #3d4558;
+    }
 
-  /* MAIN PANEL */
-  .main { flex:1; display:flex; overflow:hidden; }
+    html { scroll-behavior: smooth; }
 
-  /* PAGES */
-  .page { display:none; flex:1; overflow:hidden; }
-  .page.active { display:flex; }
+    body {
+      font-family: 'DM Sans', sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      min-height: 100vh;
+      overflow-x: hidden;
+    }
 
-  /* === HOME PAGE === */
-  #home { background:var(--bg); flex-direction:column; align-items:center; justify-content:center; gap:32px; }
-  .home-title { font-family:'Syne',sans-serif; font-size:48px; font-weight:800; text-align:center; line-height:1.1; }
-  .home-title span { background:linear-gradient(135deg,var(--accent),var(--accent2)); -webkit-background-clip:text; -webkit-text-fill-color:transparent; }
-  .home-subtitle { color:var(--text2); text-align:center; font-size:16px; max-width:400px; line-height:1.6; }
-  .home-actions { display:flex; gap:16px; flex-wrap:wrap; justify-content:center; }
-  .btn { padding:12px 24px; border-radius:12px; border:none; font-family:'DM Sans',sans-serif; font-size:15px; font-weight:500; cursor:pointer; transition:.2s; display:flex; align-items:center; gap:8px; }
-  .btn-primary { background:var(--accent); color:#fff; }
-  .btn-primary:hover { background:#3b7ef0; transform:translateY(-1px); }
-  .btn-secondary { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
-  .btn-secondary:hover { background:var(--surface3); }
-  .btn-danger { background:var(--red); color:#fff; }
-  .btn-success { background:var(--green); color:#fff; }
-  .room-code-input { background:var(--surface2); border:1px solid var(--border); color:var(--text); border-radius:12px; padding:12px 16px; font-size:15px; font-family:'DM Sans',sans-serif; outline:none; width:200px; text-align:center; letter-spacing:4px; font-weight:600; }
-  .room-code-input:focus { border-color:var(--accent); }
-  .room-card { background:var(--surface2); border:1px solid var(--border); border-radius:20px; padding:32px; text-align:center; max-width:320px; }
-  .room-code-display { font-family:'Syne',sans-serif; font-size:36px; font-weight:800; letter-spacing:6px; color:var(--accent); margin:16px 0; }
-  .home-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; max-width:680px; }
-  .feature-card { background:var(--surface2); border:1px solid var(--border); border-radius:16px; padding:20px; transition:.2s; }
-  .feature-card:hover { border-color:var(--accent); transform:translateY(-2px); }
-  .feature-icon { font-size:28px; margin-bottom:10px; }
-  .feature-card h3 { font-family:'Syne',sans-serif; font-size:14px; font-weight:700; margin-bottom:4px; }
-  .feature-card p { font-size:12px; color:var(--text2); line-height:1.5; }
+    /* ── BACKGROUND ── */
+    .bg-wrap {
+      position: relative;
+      background: radial-gradient(ellipse 90% 55% at 50% -5%, #0f1f3d 0%, var(--bg) 65%);
+    }
+    .bg-grid {
+      position: fixed;
+      inset: 0;
+      background-image:
+        linear-gradient(rgba(30,80,180,0.06) 1px, transparent 1px),
+        linear-gradient(90deg, rgba(30,80,180,0.06) 1px, transparent 1px);
+      background-size: 44px 44px;
+      pointer-events: none;
+      z-index: 0;
+    }
 
-  /* === CALL PAGE === */
-  #call { flex-direction:column; background:#000; position:relative; }
-  .video-grid { flex:1; display:grid; gap:4px; padding:4px; overflow:hidden; background:#0a0a0f; position:relative; }
-  .video-grid.solo { grid-template-columns:1fr; }
-  .video-grid.duo { grid-template-columns:1fr 1fr; }
-  .video-grid.trio { grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; }
-  .video-grid.quad { grid-template-columns:1fr 1fr; grid-template-rows:1fr 1fr; }
-  .video-grid.multi { grid-template-columns:repeat(3,1fr); }
-  .video-tile { position:relative; border-radius:12px; overflow:hidden; background:var(--surface); display:flex; align-items:center; justify-content:center; }
-  .video-tile video { width:100%; height:100%; object-fit:cover; }
-  .video-tile .avatar-big { width:80px; height:80px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:700; color:#fff; }
-  .video-tile .tile-name { position:absolute; bottom:10px; left:12px; font-size:13px; font-weight:500; background:rgba(0,0,0,0.6); padding:3px 8px; border-radius:6px; backdrop-filter:blur(8px); }
-  .video-tile .tile-muted { position:absolute; top:10px; right:10px; background:rgba(239,68,68,0.9); border-radius:6px; padding:3px 6px; font-size:11px; }
-  .video-tile.local { border:2px solid var(--accent); }
-  .video-tile.speaking { border:2px solid var(--green); animation: pulse-border 1s infinite; }
-  @keyframes pulse-border { 0%,100%{box-shadow:0 0 0 0 rgba(34,197,94,0.4)} 50%{box-shadow:0 0 0 4px rgba(34,197,94,0)} }
-  .pip-video { position:absolute; bottom:80px; right:16px; width:160px; height:100px; border-radius:12px; overflow:hidden; border:2px solid var(--accent); z-index:5; cursor:move; }
-  .pip-video video { width:100%; height:100%; object-fit:cover; }
+    /* ── NAV ── */
+    nav {
+      position: sticky; top: 0; z-index: 100;
+      display: flex; align-items: center; justify-content: space-between;
+      padding: 18px 40px;
+      background: rgba(10,13,20,0.85);
+      backdrop-filter: blur(14px);
+      border-bottom: 1px solid var(--border);
+    }
+    .logo { display: flex; align-items: center; gap: 10px; text-decoration: none; }
+    .logo-icon {
+      width: 38px; height: 38px; border-radius: 11px;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      display: flex; align-items: center; justify-content: center; font-size: 20px;
+    }
+    .logo-text { font-family: 'Syne', sans-serif; font-weight: 800; font-size: 21px; color: #fff; }
+    .logo-text span { color: var(--blue); }
+    .nav-right { display: flex; align-items: center; gap: 14px; }
+    .online-badge {
+      display: flex; align-items: center; gap: 7px;
+      font-size: 12px; color: var(--green);
+      background: rgba(125,211,168,0.1); border: 1px solid rgba(125,211,168,0.22);
+      padding: 6px 14px; border-radius: 20px; font-weight: 500;
+    }
+    .pulse { width: 7px; height: 7px; border-radius: 50%; background: var(--green); animation: pulse 2s infinite; }
+    @keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.45;transform:scale(0.8)} }
+    .nav-btn {
+      font-family: 'DM Sans', sans-serif; font-size: 13px; font-weight: 500;
+      padding: 8px 18px; border-radius: 9px;
+      border: 1px solid var(--border2);
+      background: transparent; color: var(--muted); cursor: pointer;
+      transition: color .15s, border-color .15s, background .15s;
+    }
+    .nav-btn:hover { color: var(--text); border-color: rgba(255,255,255,0.25); background: rgba(255,255,255,0.04); }
+    .nav-btn.primary {
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      color: #fff; border-color: transparent;
+    }
+    .nav-btn.primary:hover { opacity: 0.88; }
 
-  /* CALL CONTROLS */
-  .call-controls { height:72px; background:rgba(10,11,15,0.95); backdrop-filter:blur(12px); display:flex; align-items:center; justify-content:center; gap:12px; border-top:1px solid var(--border); flex-shrink:0; }
-  .ctrl-btn { width:48px; height:48px; border-radius:50%; border:none; cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:20px; transition:.2s; }
-  .ctrl-btn.normal { background:var(--surface3); color:var(--text); }
-  .ctrl-btn.normal:hover { background:var(--surface2); }
-  .ctrl-btn.active-on { background:var(--surface3); color:var(--accent); }
-  .ctrl-btn.off { background:var(--surface3); color:var(--red); }
-  .ctrl-btn.end { background:var(--red); color:#fff; width:56px; height:56px; font-size:22px; }
-  .ctrl-btn.end:hover { background:#dc2626; transform:scale(1.05); }
-  .call-top-bar { position:absolute; top:0; left:0; right:0; padding:12px 16px; display:flex; align-items:center; justify-content:space-between; background:linear-gradient(to bottom,rgba(0,0,0,0.7),transparent); z-index:4; }
-  .call-info { display:flex; align-items:center; gap:12px; }
-  .call-timer { font-family:'Syne',sans-serif; font-size:14px; font-weight:600; color:var(--green); }
-  .participants-count { font-size:13px; color:var(--text2); }
-  .call-top-actions { display:flex; gap:8px; }
-  .top-btn { background:rgba(255,255,255,0.1); border:none; color:var(--text); border-radius:8px; padding:6px 12px; font-size:13px; cursor:pointer; transition:.2s; backdrop-filter:blur(8px); }
-  .top-btn:hover { background:rgba(255,255,255,0.2); }
+    /* ── HERO ── */
+    .hero { position: relative; z-index: 10; text-align: center; padding: 80px 24px 56px; }
+    .hero-badge {
+      display: inline-flex; align-items: center; gap: 7px;
+      background: rgba(26,110,245,0.1); border: 1px solid rgba(26,110,245,0.28);
+      color: #6ea8f7; font-size: 12px; font-weight: 500; padding: 6px 16px;
+      border-radius: 20px; margin-bottom: 28px; animation: fadeUp .6s ease both;
+    }
+    .hero h1 {
+      font-family: 'Syne', sans-serif; font-size: clamp(40px,7vw,68px);
+      font-weight: 800; line-height: 1.02; letter-spacing: -2.5px; color: #fff;
+      margin-bottom: 20px; animation: fadeUp .65s .1s ease both;
+    }
+    .hero h1 em {
+      font-style: normal;
+      background: linear-gradient(90deg, var(--blue), #a855f7);
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    }
+    .hero p {
+      color: var(--muted); font-size: 17px; font-weight: 300; line-height: 1.65;
+      max-width: 500px; margin: 0 auto 40px;
+      animation: fadeUp .65s .2s ease both;
+    }
+    .cta-row {
+      display: flex; align-items: center; justify-content: center; gap: 12px;
+      flex-wrap: wrap; margin-bottom: 14px;
+      animation: fadeUp .65s .3s ease both;
+    }
+    .btn-main {
+      font-family: 'DM Sans', sans-serif; font-weight: 600; font-size: 15px;
+      padding: 14px 30px; border-radius: 13px;
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      color: #fff; border: none; cursor: pointer;
+      transition: transform .15s, box-shadow .15s;
+      box-shadow: 0 4px 20px rgba(26,110,245,0.3);
+    }
+    .btn-main:hover { transform: translateY(-2px); box-shadow: 0 10px 36px rgba(26,110,245,0.45); }
+    .btn-outline {
+      font-family: 'DM Sans', sans-serif; font-weight: 500; font-size: 15px;
+      padding: 14px 24px; border-radius: 13px;
+      background: transparent; border: 1px solid var(--border2); color: #c8d0e4;
+      cursor: pointer; display: flex; align-items: center; gap: 8px;
+      transition: border-color .15s, background .15s;
+    }
+    .btn-outline:hover { border-color: rgba(255,255,255,0.28); background: rgba(255,255,255,0.04); }
+    .hero-hint { font-size: 12px; color: var(--hint); margin-bottom: 60px; }
 
-  /* CALL SIDE PANEL */
-  .call-side { width:300px; background:var(--surface); border-left:1px solid var(--border); display:flex; flex-direction:column; flex-shrink:0; }
-  .call-side.hidden { display:none; }
-  .side-tabs { display:flex; border-bottom:1px solid var(--border); }
-  .side-tab { flex:1; padding:12px; text-align:center; font-size:13px; cursor:pointer; color:var(--text2); border:none; background:transparent; transition:.2s; }
-  .side-tab.active { color:var(--accent); border-bottom:2px solid var(--accent); }
-  .side-content { flex:1; overflow-y:auto; padding:12px; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(18px)} to{opacity:1;transform:translateY(0)} }
 
-  /* === CHAT PAGE === */
-  #chat { flex-direction:row; }
-  .chat-list { width:280px; min-width:280px; background:var(--surface); border-right:1px solid var(--border); display:flex; flex-direction:column; }
-  .chat-header { padding:16px; border-bottom:1px solid var(--border); display:flex; align-items:center; justify-content:space-between; }
-  .chat-header h2 { font-family:'Syne',sans-serif; font-size:18px; font-weight:700; }
-  .search-box { margin:10px; position:relative; }
-  .search-box input { width:100%; background:var(--surface2); border:1px solid var(--border); border-radius:10px; padding:8px 12px 8px 36px; color:var(--text); font-size:13px; outline:none; }
-  .search-box input:focus { border-color:var(--accent); }
-  .search-icon { position:absolute; left:10px; top:50%; transform:translateY(-50%); color:var(--text3); font-size:15px; }
-  .chat-items { flex:1; overflow-y:auto; }
-  .chat-item { padding:12px 14px; cursor:pointer; display:flex; gap:12px; align-items:center; transition:.15s; border-bottom:1px solid rgba(255,255,255,0.03); }
-  .chat-item:hover, .chat-item.active { background:var(--surface2); }
-  .chat-item.active { border-left:3px solid var(--accent); }
-  .chat-item-avatar { width:42px; height:42px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-weight:700; font-size:15px; position:relative; }
-  .online-dot { position:absolute; bottom:1px; right:1px; width:10px; height:10px; background:var(--green); border-radius:50%; border:2px solid var(--surface); }
-  .chat-item-info { flex:1; min-width:0; }
-  .chat-item-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:3px; }
-  .chat-item-name { font-size:14px; font-weight:500; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .chat-item-time { font-size:11px; color:var(--text3); flex-shrink:0; }
-  .chat-item-msg { font-size:12px; color:var(--text2); white-space:nowrap; overflow:hidden; text-overflow:ellipsis; }
-  .unread-badge { background:var(--accent); color:#fff; border-radius:50%; width:18px; height:18px; font-size:10px; display:flex; align-items:center; justify-content:center; flex-shrink:0; font-weight:700; }
+    /* ── CHAT WINDOW MOCKUP ── */
+    .chat-window {
+      max-width: 700px; margin: 0 auto;
+      border-radius: 22px; border: 1px solid rgba(255,255,255,0.09);
+      background: rgba(11,15,26,0.95); overflow: hidden;
+      box-shadow: 0 40px 120px rgba(0,0,0,0.6);
+      animation: fadeUp .65s .4s ease both;
+    }
+    .win-titlebar {
+      display: flex; align-items: center; gap: 8px;
+      padding: 14px 20px; border-bottom: 1px solid var(--border);
+      background: rgba(13,17,32,0.9);
+    }
+    .tl { width: 11px; height: 11px; border-radius: 50%; }
+    .win-title { font-size: 13px; font-weight: 500; color: var(--muted); flex:1; text-align:center; margin-right: 35px; }
+    .cam-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; padding: 18px; }
+    .cam-box {
+      border-radius: 16px; aspect-ratio: 4/3; position: relative;
+      display: flex; align-items: center; justify-content: center; flex-direction: column; gap: 10px;
+      overflow: hidden;
+    }
+    .cam-you { background: linear-gradient(145deg, #0c1829, #09111f); }
+    .cam-them { background: linear-gradient(145deg, #180c29, #0b091f); }
+    .cam-avatar-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+    .avatar-circle {
+      width: 62px; height: 62px; border-radius: 50%;
+      display: flex; align-items: center; justify-content: center;
+      font-family: 'Syne', sans-serif; font-weight: 800; font-size: 24px;
+    }
+    .av-you { background: rgba(26,110,245,0.18); border: 2px solid rgba(26,110,245,0.4); color: #6ea8f7; }
+    .av-them { background: rgba(168,85,247,0.18); border: 2px solid rgba(168,85,247,0.4); color: #c084fc; }
+    .cam-lbl { font-size: 10px; color: var(--hint); font-weight: 500; letter-spacing: 0.8px; text-transform: uppercase; }
+    .cam-corner {
+      position: absolute; top: 10px; left: 10px;
+      background: rgba(0,0,0,0.55); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 8px; padding: 4px 10px; font-size: 11px; color: var(--muted);
+      display: flex; align-items: center; gap: 5px;
+    }
+    .match-tag {
+      position: absolute; top: 10px; right: 10px;
+      background: rgba(125,211,168,0.14); border: 1px solid rgba(125,211,168,0.28);
+      border-radius: 8px; padding: 4px 10px; font-size: 11px; color: var(--green); font-weight: 500;
+    }
 
-  /* CHAT WINDOW */
-  .chat-window { flex:1; display:flex; flex-direction:column; }
-  .chat-win-header { padding:14px 18px; border-bottom:1px solid var(--border); display:flex; align-items:center; gap:12px; }
-  .chat-win-info { flex:1; }
-  .chat-win-name { font-family:'Syne',sans-serif; font-size:16px; font-weight:700; }
-  .chat-win-status { font-size:12px; color:var(--green); }
-  .chat-win-actions { display:flex; gap:8px; }
-  .icon-btn { width:36px; height:36px; border-radius:10px; border:none; background:var(--surface2); color:var(--text2); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:17px; transition:.2s; }
-  .icon-btn:hover { background:var(--surface3); color:var(--accent); }
-  .messages-area { flex:1; overflow-y:auto; padding:16px; display:flex; flex-direction:column; gap:8px; }
-  .msg { display:flex; gap:10px; max-width:70%; }
-  .msg.mine { align-self:flex-end; flex-direction:row-reverse; }
-  .msg-avatar { width:30px; height:30px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:11px; font-weight:700; align-self:flex-end; }
-  .msg-bubble { padding:10px 14px; border-radius:16px; font-size:14px; line-height:1.5; position:relative; }
-  .msg:not(.mine) .msg-bubble { background:var(--surface3); border-radius:4px 16px 16px 16px; }
-  .msg.mine .msg-bubble { background:var(--accent); color:#fff; border-radius:16px 4px 16px 16px; }
-  .msg-meta { font-size:10px; color:var(--text3); margin-top:3px; display:flex; align-items:center; gap:4px; }
-  .msg.mine .msg-meta { justify-content:flex-end; }
-  .msg-date-sep { text-align:center; font-size:11px; color:var(--text3); padding:8px 0; }
-  .msg-input-area { padding:12px 16px; border-top:1px solid var(--border); display:flex; align-items:flex-end; gap:10px; }
-  .msg-input { flex:1; background:var(--surface2); border:1px solid var(--border); border-radius:16px; padding:10px 14px; color:var(--text); font-size:14px; resize:none; outline:none; font-family:'DM Sans',sans-serif; max-height:100px; overflow-y:auto; }
-  .msg-input:focus { border-color:var(--accent); }
-  .send-btn { width:40px; height:40px; border-radius:50%; background:var(--accent); border:none; color:#fff; cursor:pointer; font-size:18px; display:flex; align-items:center; justify-content:center; transition:.2s; flex-shrink:0; }
-  .send-btn:hover { background:#3b7ef0; transform:scale(1.05); }
-  .typing-indicator { font-size:12px; color:var(--text2); padding:4px 0; display:flex; align-items:center; gap:6px; }
-  .typing-dots span { display:inline-block; width:6px; height:6px; background:var(--text2); border-radius:50%; animation:typing .8s infinite; }
-  .typing-dots span:nth-child(2) { animation-delay:.2s; }
-  .typing-dots span:nth-child(3) { animation-delay:.4s; }
-  @keyframes typing { 0%,60%,100%{transform:translateY(0)} 30%{transform:translateY(-6px)} }
-  .emoji-reactions { display:flex; gap:4px; margin-top:4px; }
-  .reaction { background:var(--surface3); border-radius:12px; padding:2px 8px; font-size:13px; cursor:pointer; transition:.2s; border:1px solid transparent; }
-  .reaction:hover { border-color:var(--accent); }
-  .reaction.mine-reaction { border-color:var(--accent); background:rgba(79,142,247,0.1); }
+    /* Action bar */
+    .action-bar {
+      display: flex; align-items: stretch; gap: 8px;
+      padding: 12px 18px; border-top: 1px solid var(--border);
+      background: rgba(9,12,20,0.95); flex-wrap: wrap;
+    }
+    .act {
+      flex: 1; min-width: 58px; padding: 10px 6px; border-radius: 11px;
+      border: 1px solid var(--border); background: transparent; color: var(--muted);
+      font-family: 'DM Sans', sans-serif; font-size: 11px; font-weight: 500;
+      cursor: pointer; display: flex; flex-direction: column; align-items: center; gap: 5px;
+      transition: all .15s;
+    }
+    .act:hover { background: rgba(255,255,255,0.05); color: var(--text); border-color: var(--border2); }
+    .act-icon { font-size: 18px; line-height: 1; }
+    .act-next {
+      background: linear-gradient(135deg, var(--blue), var(--purple));
+      color: #fff; border-color: transparent;
+    }
+    .act-next:hover { opacity: 0.88; transform: scale(0.98); }
 
-  /* === MEETING PAGE === */
-  #meeting { flex-direction:column; overflow-y:auto; }
-  .meeting-container { padding:32px; max-width:900px; margin:0 auto; width:100%; }
-  .page-title { font-family:'Syne',sans-serif; font-size:28px; font-weight:800; margin-bottom:8px; }
-  .page-sub { color:var(--text2); margin-bottom:32px; }
-  .meeting-grid { display:grid; grid-template-columns:1fr 1fr; gap:20px; margin-bottom:32px; }
-  .meeting-card { background:var(--surface2); border:1px solid var(--border); border-radius:20px; padding:24px; }
-  .meeting-card h3 { font-family:'Syne',sans-serif; font-size:16px; font-weight:700; margin-bottom:16px; display:flex; align-items:center; gap:8px; }
-  .form-group { margin-bottom:14px; }
-  .form-label { font-size:12px; color:var(--text2); margin-bottom:6px; display:block; }
-  .form-input { width:100%; background:var(--surface3); border:1px solid var(--border); border-radius:10px; padding:10px 14px; color:var(--text); font-size:14px; outline:none; font-family:'DM Sans',sans-serif; }
-  .form-input:focus { border-color:var(--accent); }
-  .meeting-list { }
-  .meeting-item { background:var(--surface2); border:1px solid var(--border); border-radius:16px; padding:20px; margin-bottom:12px; display:flex; align-items:center; gap:16px; }
-  .meeting-dot { width:8px; height:8px; border-radius:50%; background:var(--accent); flex-shrink:0; }
-  .meeting-item-info { flex:1; }
-  .meeting-item-title { font-weight:600; font-size:15px; margin-bottom:4px; }
-  .meeting-item-meta { font-size:12px; color:var(--text2); }
-  .meeting-item-actions { display:flex; gap:8px; }
-  .badge { padding:4px 10px; border-radius:20px; font-size:11px; font-weight:600; }
-  .badge-live { background:rgba(34,197,94,0.15); color:var(--green); }
-  .badge-upcoming { background:rgba(79,142,247,0.15); color:var(--accent); }
+    /* Feature pills */
+    .feat-strip {
+      display: grid; grid-template-columns: repeat(4,1fr);
+      border-top: 1px solid rgba(255,255,255,0.04); padding: 14px 18px; gap: 8px;
+    }
+    .feat-item { text-align: center; padding: 10px 4px; }
+    .feat-icon { font-size: 22px; margin-bottom: 6px; }
+    .feat-lbl { font-size: 10px; color: var(--hint); font-weight: 500; text-transform: uppercase; letter-spacing: 0.6px; }
 
-  /* === WHITEBOARD === */
-  #whiteboard { flex-direction:column; }
-  .wb-toolbar { padding:10px 16px; background:var(--surface); border-bottom:1px solid var(--border); display:flex; gap:12px; align-items:center; flex-wrap:wrap; }
-  .wb-tool { width:36px; height:36px; border-radius:8px; border:none; background:transparent; color:var(--text2); cursor:pointer; display:flex; align-items:center; justify-content:center; font-size:18px; transition:.2s; }
-  .wb-tool:hover, .wb-tool.active { background:var(--surface3); color:var(--accent); }
-  .wb-color { width:24px; height:24px; border-radius:50%; border:2px solid transparent; cursor:pointer; transition:.2s; }
-  .wb-color.active { border-color: #fff; transform:scale(1.2); }
-  .wb-size { width:60px; accent-color:var(--accent); }
-  canvas#wb-canvas { flex:1; width:100%; cursor:crosshair; background:#fff; }
+    /* ── FILTERS SECTION ── */
+    .section { position: relative; z-index: 10; padding: 72px 40px 60px; max-width: 1000px; margin: 0 auto; }
+    .section-tag { font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px; color: var(--blue); font-weight: 600; margin-bottom: 12px; }
+    .section-title { font-family: 'Syne', sans-serif; font-size: clamp(26px,4vw,38px); font-weight: 800; color: #fff; margin-bottom: 12px; letter-spacing: -1px; }
+    .section-sub { font-size: 15px; color: var(--muted); font-weight: 300; line-height: 1.6; max-width: 480px; margin-bottom: 40px; }
 
-  /* PARTICIPANTS PANEL */
-  .participant-item { display:flex; align-items:center; gap:12px; padding:10px 0; border-bottom:1px solid var(--border); }
-  .participant-item:last-child { border:none; }
-  .participant-avatar { width:36px; height:36px; border-radius:50%; display:flex; align-items:center; justify-content:center; font-size:13px; font-weight:700; flex-shrink:0; }
-  .participant-info { flex:1; }
-  .participant-name { font-size:14px; font-weight:500; }
-  .participant-role { font-size:11px; color:var(--text2); }
-  .participant-controls { display:flex; gap:6px; }
-  .p-ctrl { width:28px; height:28px; border-radius:8px; border:none; background:var(--surface3); color:var(--text2); cursor:pointer; font-size:14px; display:flex; align-items:center; justify-content:center; transition:.2s; }
-  .p-ctrl:hover { background:var(--accent); color:#fff; }
+    .filter-panel {
+      background: var(--surface); border: 1px solid var(--border); border-radius: 20px;
+      padding: 28px; display: flex; flex-direction: column; gap: 24px;
+    }
+    .filter-group label { display: block; font-size: 11px; font-weight: 600; color: var(--muted); text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; }
+    .filter-pills { display: flex; flex-wrap: wrap; gap: 8px; }
+    .pill {
+      padding: 7px 16px; border-radius: 20px; font-size: 13px; font-weight: 500;
+      border: 1px solid var(--border); background: transparent; color: var(--muted);
+      cursor: pointer; transition: all .15s;
+    }
+    .pill:hover, .pill.active { border-color: var(--blue); color: #6ea8f7; background: rgba(26,110,245,0.1); }
+    .range-row { display: flex; align-items: center; gap: 14px; }
+    .range-row input[type=range] { flex:1; accent-color: var(--blue); }
+    .range-val { font-size: 13px; color: #6ea8f7; font-weight: 500; min-width: 50px; }
 
-  /* MODALS */
-  .modal-overlay { position:fixed; inset:0; background:rgba(0,0,0,0.7); backdrop-filter:blur(6px); z-index:100; display:none; align-items:center; justify-content:center; }
-  .modal-overlay.open { display:flex; }
-  .modal { background:var(--surface); border:1px solid var(--border); border-radius:24px; padding:32px; width:440px; max-width:90vw; }
-  .modal h2 { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; margin-bottom:8px; }
-  .modal p { color:var(--text2); font-size:14px; margin-bottom:24px; }
-  .modal-actions { display:flex; gap:12px; justify-content:flex-end; margin-top:24px; }
-  .code-display { background:var(--surface2); border:1px solid var(--border); border-radius:12px; padding:20px; text-align:center; margin:16px 0; }
-  .code-big { font-family:'Syne',sans-serif; font-size:42px; font-weight:800; letter-spacing:8px; color:var(--accent); }
-  .code-hint { font-size:12px; color:var(--text2); margin-top:8px; }
+    /* ── FEATURES GRID ── */
+    .features-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 16px; }
+    .feat-card {
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 18px; padding: 24px 22px;
+      transition: border-color .2s, transform .2s;
+    }
+    .feat-card:hover { border-color: rgba(26,110,245,0.3); transform: translateY(-3px); }
+    .feat-card-icon { font-size: 28px; margin-bottom: 14px; }
+    .feat-card h3 { font-family: 'Syne', sans-serif; font-size: 15px; font-weight: 700; color: #fff; margin-bottom: 6px; }
+    .feat-card p { font-size: 13px; color: var(--muted); line-height: 1.55; }
 
-  /* TOAST */
-  .toast-container { position:fixed; top:20px; right:20px; z-index:200; display:flex; flex-direction:column; gap:8px; }
-  .toast { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 18px; font-size:14px; display:flex; align-items:center; gap:10px; box-shadow:var(--shadow); animation:toast-in .3s ease; min-width:240px; }
-  @keyframes toast-in { from{transform:translateX(100%);opacity:0} to{transform:translateX(0);opacity:1} }
-  .toast.success { border-left:3px solid var(--green); }
-  .toast.error { border-left:3px solid var(--red); }
-  .toast.info { border-left:3px solid var(--accent); }
+    /* ── GAMIFICATION ── */
+    .gamif-row { display: flex; flex-wrap: wrap; gap: 14px; }
+    .badge-card {
+      flex: 1; min-width: 140px; background: var(--surface); border: 1px solid var(--border);
+      border-radius: 16px; padding: 20px 18px; text-align: center;
+    }
+    .badge-icon { font-size: 36px; margin-bottom: 8px; }
+    .badge-name { font-size: 13px; font-weight: 600; color: var(--text); margin-bottom: 4px; }
+    .badge-desc { font-size: 11px; color: var(--hint); }
+    .xp-bar-wrap { background: var(--surface2); border-radius: 20px; height: 8px; margin-top: 10px; overflow: hidden; }
+    .xp-bar { height: 100%; border-radius: 20px; background: linear-gradient(90deg, var(--blue), var(--purple)); }
 
-  /* SCROLLBAR */
-  ::-webkit-scrollbar { width:5px; }
-  ::-webkit-scrollbar-track { background:transparent; }
-  ::-webkit-scrollbar-thumb { background:var(--surface3); border-radius:4px; }
-  ::-webkit-scrollbar-thumb:hover { background:var(--text3); }
+    /* ── ROADMAP ── */
+    .roadmap { display: flex; flex-wrap: wrap; gap: 12px; justify-content: center; }
+    .road-item {
+      padding: 10px 22px; border-radius: 24px; font-size: 13px; font-weight: 600;
+      font-family: 'Syne', sans-serif; letter-spacing: 0.3px;
+    }
+    .road-done { background: rgba(26,110,245,0.14); border: 1px solid rgba(26,110,245,0.3); color: #6ea8f7; }
+    .road-todo { background: rgba(255,255,255,0.03); border: 1px solid var(--border); color: var(--hint); }
 
-  /* RAISE HAND ANIM */
-  .raise-hand-anim { animation:raise 0.5s ease forwards; }
-  @keyframes raise { 0%{transform:scale(1)} 50%{transform:scale(1.4)} 100%{transform:scale(1)} }
+    /* ── SAFETY ── */
+    .safety-list { list-style: none; display: flex; flex-direction: column; gap: 12px; }
+    .safety-list li {
+      display: flex; align-items: center; gap: 12px;
+      background: var(--surface); border: 1px solid var(--border);
+      border-radius: 14px; padding: 16px 20px; font-size: 14px; color: var(--text);
+    }
+    .safety-list li span { font-size: 22px; }
 
-  /* RECORDING INDICATOR */
-  .rec-dot { width:10px; height:10px; background:var(--red); border-radius:50%; animation:blink 1.2s infinite; display:inline-block; }
-  @keyframes blink { 0%,100%{opacity:1} 50%{opacity:0.3} }
+    /* ── FOOTER ── */
+    footer {
+      position: relative; z-index: 10; text-align: center;
+      padding: 40px 24px; border-top: 1px solid var(--border);
+      color: var(--hint); font-size: 13px;
+    }
+    footer strong { color: var(--muted); }
 
-  /* REACTIONS OVERLAY */
-  .reactions-overlay { position:absolute; bottom:80px; left:50%; transform:translateX(-50%); display:flex; gap:8px; z-index:10; opacity:0; pointer-events:none; transition:.3s; }
-  .reactions-overlay.visible { opacity:1; pointer-events:auto; }
-  .reaction-btn { font-size:28px; cursor:pointer; transition:.2s; }
-  .reaction-btn:hover { transform:scale(1.3); }
-  .floating-emoji { position:absolute; font-size:28px; pointer-events:none; animation:float-up 2s ease forwards; }
-  @keyframes float-up { 0%{transform:translateY(0) scale(1);opacity:1} 100%{transform:translateY(-200px) scale(0.5);opacity:0} }
+    /* ── MODAL ── */
+    .modal-overlay {
+      display: none; position: fixed; inset: 0; z-index: 200;
+      background: rgba(0,0,0,0.7); backdrop-filter: blur(6px);
+      align-items: center; justify-content: center;
+    }
+    .modal-overlay.show { display: flex; }
+    .modal {
+      background: var(--surface); border: 1px solid var(--border2);
+      border-radius: 22px; padding: 36px; max-width: 380px; width: 90%; text-align: center;
+    }
+    .modal h2 { font-family: 'Syne', sans-serif; font-size: 22px; font-weight: 800; color: #fff; margin-bottom: 10px; }
+    .modal p { color: var(--muted); font-size: 14px; margin-bottom: 24px; line-height: 1.5; }
+    .modal-btns { display: flex; flex-direction: column; gap: 10px; }
+    .modal-btn {
+      padding: 13px; border-radius: 12px; font-family: 'DM Sans', sans-serif;
+      font-size: 15px; font-weight: 500; cursor: pointer; border: 1px solid var(--border);
+      background: transparent; color: var(--text); transition: all .15s;
+    }
+    .modal-btn:hover { background: rgba(255,255,255,0.05); }
+    .modal-btn.google { border-color: rgba(234,67,53,0.3); color: #ff7b72; }
+    .modal-btn.discord { border-color: rgba(88,101,242,0.3); color: #818cf8; }
+    .modal-close {
+      margin-top: 16px; font-size: 12px; color: var(--hint); cursor: pointer;
+      background: none; border: none; font-family: 'DM Sans', sans-serif;
+    }
+    .modal-close:hover { color: var(--muted); }
 
-  /* WAITING ROOM BADGE */
-  .waiting-badge { background:rgba(245,158,11,0.15); color:var(--yellow); border-radius:20px; padding:4px 12px; font-size:12px; font-weight:600; }
-
-  /* SETTINGS */
-  #settings { flex-direction:column; overflow-y:auto; }
-  .settings-container { padding:32px; max-width:700px; margin:0 auto; width:100%; }
-  .settings-section { background:var(--surface2); border:1px solid var(--border); border-radius:20px; padding:24px; margin-bottom:20px; }
-  .settings-section h3 { font-family:'Syne',sans-serif; font-size:16px; font-weight:700; margin-bottom:16px; }
-  .setting-row { display:flex; align-items:center; justify-content:space-between; padding:12px 0; border-bottom:1px solid var(--border); }
-  .setting-row:last-child { border:none; }
-  .setting-info h4 { font-size:14px; font-weight:500; }
-  .setting-info p { font-size:12px; color:var(--text2); margin-top:2px; }
-  .toggle { width:44px; height:24px; background:var(--surface3); border-radius:20px; cursor:pointer; position:relative; transition:.3s; border:none; }
-  .toggle.on { background:var(--accent); }
-  .toggle::after { content:''; width:18px; height:18px; background:#fff; border-radius:50%; position:absolute; top:3px; left:3px; transition:.3s; }
-  .toggle.on::after { transform:translateX(20px); }
-
-  /* PROFILE HEADER */
-  .profile-header { display:flex; align-items:center; gap:20px; background:var(--surface2); border:1px solid var(--border); border-radius:20px; padding:24px; margin-bottom:24px; }
-  .profile-avatar { width:72px; height:72px; border-radius:50%; background:linear-gradient(135deg,var(--accent),var(--accent2)); display:flex; align-items:center; justify-content:center; font-size:28px; font-weight:700; }
-  .profile-info h2 { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; }
-  .profile-info p { color:var(--text2); font-size:14px; margin-top:4px; }
-
-  /* HIDDEN */
-  .hidden { display:none !important; }
-  .sep { height:1px; background:var(--border); margin:8px 0; }
-
-  /* RESPONSIVE */
-  @media(max-width:600px){
-    .sidebar{ width:56px; min-width:56px; }
-    .chat-list{ width:220px; min-width:220px; }
-    .home-title{ font-size:32px; }
-    .home-grid{ grid-template-columns:1fr 1fr; }
-    .meeting-grid{ grid-template-columns:1fr; }
-  }
-</style>
+    /* ── RESPONSIVE ── */
+    @media (max-width: 640px) {
+      nav { padding: 14px 20px; }
+      .hero { padding: 60px 20px 40px; }
+      .cam-grid { gap: 8px; padding: 12px; }
+      .section { padding: 52px 20px 44px; }
+      .feat-strip { grid-template-columns: repeat(2,1fr); }
+      .gamif-row .badge-card { min-width: 120px; }
+    }
+  </style>
 </head>
 <body>
 
-<!-- SIDEBAR -->
-<nav class="sidebar" id="sidebar">
-  <div class="logo">N</div>
-  <button class="nav-btn active" data-page="home" title="Home" onclick="goPage('home',this)">🏠</button>
-  <button class="nav-btn" data-page="call" title="Video Call" onclick="goPage('call',this)">🎥</button>
-  <button class="nav-btn" data-page="chat" title="Chat" onclick="goPage('chat',this)">💬<span class="badge"></span></button>
-  <button class="nav-btn" data-page="meeting" title="Meeting" onclick="goPage('meeting',this)">📅</button>
-  <button class="nav-btn" data-page="whiteboard" title="Whiteboard" onclick="goPage('whiteboard',this)">✏️</button>
-  <div class="sidebar-spacer"></div>
-  <button class="nav-btn" data-page="settings" title="Settings" onclick="goPage('settings',this)">⚙️</button>
-  <div class="avatar-sm" onclick="goPage('settings',document.querySelector('[data-page=settings]'))" title="Profil Saya">A</div>
-</nav>
+<div class="bg-grid"></div>
 
-<!-- MAIN -->
-<div class="main">
-
-  <!-- HOME -->
-  <div class="page active" id="home">
-    <div style="flex:1;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:28px;padding:32px;overflow-y:auto;">
-      <div>
-        <h1 class="home-title">Halo di <span>NexCall</span></h1>
-        <p class="home-subtitle">Platform komunikasi lengkap — video call HD, chat real-time, meeting profesional, whiteboard kolaboratif.</p>
-      </div>
-      <div class="home-actions" id="home-actions">
-        <button class="btn btn-primary" onclick="startNewCall()">🎥 Mulai Call</button>
-        <button class="btn btn-secondary" onclick="showJoinModal()">🔗 Join dengan Kode</button>
-        <button class="btn btn-secondary" onclick="goPage('meeting',document.querySelector('[data-page=meeting]'))">📅 Buat Meeting</button>
-      </div>
-      <div class="home-grid">
-        <div class="feature-card"><div class="feature-icon">🎥</div><h3>Video HD</h3><p>1-on-1 & group call sampai 50 peserta</p></div>
-        <div class="feature-card"><div class="feature-icon">🔇</div><h3>Noise Cancel</h3><p>AI hilangkan suara bising otomatis</p></div>
-        <div class="feature-card"><div class="feature-icon">🌫️</div><h3>Blur Background</h3><p>Background blur & virtual background</p></div>
-        <div class="feature-card"><div class="feature-icon">📱</div><h3>Multi Platform</h3><p>Web & mobile, sinkronisasi semua device</p></div>
-        <div class="feature-card"><div class="feature-icon">🔒</div><h3>E2E Encrypt</h3><p>End-to-end encryption semua percakapan</p></div>
-        <div class="feature-card"><div class="feature-icon">🤖</div><h3>AI Summary</h3><p>Ringkasan meeting otomatis & transkrip</p></div>
-      </div>
+<!-- MODAL -->
+<div class="modal-overlay" id="loginModal">
+  <div class="modal">
+    <h2>Bergabung ke ChatVerse</h2>
+    <p>Login untuk unlock Friend System, riwayat chat, dan level akun kamu.</p>
+    <div class="modal-btns">
+      <button class="modal-btn google" onclick="closeModal()">🔴 Lanjut dengan Google</button>
+      <button class="modal-btn discord" onclick="closeModal()">🟣 Lanjut dengan Discord</button>
+      <button class="modal-btn" onclick="closeModal()">👤 Mode Guest (tanpa login)</button>
     </div>
+    <button class="modal-close" onclick="closeModal()">✕ Tutup</button>
   </div>
+</div>
 
-  <!-- VIDEO CALL -->
-  <div class="page" id="call">
-    <div class="call-top-bar">
-      <div class="call-info">
-        <span id="call-room-label" style="font-family:'Syne',sans-serif;font-size:14px;font-weight:700;">Room: NEXCALL</span>
-        <span class="call-timer" id="call-timer">00:00</span>
-        <span class="participants-count" id="participants-count">👥 3</span>
-      </div>
-      <div class="call-top-actions">
-        <span id="rec-indicator" class="hidden" style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--red);"><span class="rec-dot"></span> REC</span>
-        <button class="top-btn" onclick="toggleLayout()">⊞ Layout</button>
-        <button class="top-btn" onclick="toggleSidePanel()">💬 Chat</button>
-        <button class="top-btn" onclick="showParticipants()">👥 Peserta</button>
-      </div>
-    </div>
+<div class="bg-wrap">
 
-    <!-- VIDEO GRID -->
-    <div class="video-grid trio" id="video-grid">
-      <div class="video-tile local" id="local-tile">
-        <video id="local-video" autoplay muted playsinline></video>
-        <div class="avatar-big" id="local-avatar" style="background:linear-gradient(135deg,#4f8ef7,#7c3aed);display:none;">A</div>
-        <div class="tile-name">Anda (Host)</div>
+  <!-- NAV -->
+  <nav>
+    <a class="logo" href="#">
+      <div class="logo-icon">💬</div>
+      <span class="logo-text">Chat<span>Verse</span></span>
+    </a>
+    <div class="nav-right">
+      <div class="online-badge">
+        <div class="pulse"></div>
+        <span id="onlineCount">24,582 online</span>
       </div>
-      <div class="video-tile speaking" id="tile-2">
-        <div class="avatar-big" style="background:linear-gradient(135deg,#f59e0b,#ef4444);">B</div>
-        <div class="tile-name">Budi Santoso</div>
-      </div>
-      <div class="video-tile" id="tile-3">
-        <div class="avatar-big" style="background:linear-gradient(135deg,#22c55e,#0ea5e9);">C</div>
-        <div class="tile-name">Citra Dewi</div>
-      </div>
+      <button class="nav-btn" onclick="openModal()">Masuk</button>
+      <button class="nav-btn primary" onclick="startChat()">Mulai Chat</button>
     </div>
+  </nav>
 
-    <!-- PIP -->
-    <div class="pip-video hidden" id="pip-video">
-      <video id="pip-vid" autoplay muted playsinline></video>
+  <!-- HERO -->
+  <section class="hero">
+    <div class="hero-badge">🌐 Terhubung ke 190+ negara</div>
+    <h1>Temui <em>dunia</em><br>dalam satu klik</h1>
+    <p>Random video chat tanpa ribet. Pilih teks, suara, atau video — dan langsung terhubung dengan orang baru di seluruh dunia.</p>
+    <div class="cta-row">
+      <button class="btn-main" onclick="startChat()">🎲 Mulai Random Chat</button>
+      <button class="btn-outline" onclick="startChat()">🎥 Video Chat</button>
+      <button class="btn-outline" onclick="startChat()">💬 Text Saja</button>
     </div>
+    <p class="hero-hint">Tidak perlu daftar · Guest mode tersedia · 100% gratis</p>
 
-    <!-- REACTIONS -->
-    <div class="reactions-overlay" id="reactions-overlay">
-      <span class="reaction-btn" onclick="sendReaction('👏')">👏</span>
-      <span class="reaction-btn" onclick="sendReaction('❤️')">❤️</span>
-      <span class="reaction-btn" onclick="sendReaction('😂')">😂</span>
-      <span class="reaction-btn" onclick="sendReaction('🔥')">🔥</span>
-      <span class="reaction-btn" onclick="sendReaction('👍')">👍</span>
-    </div>
-
-    <!-- CONTROLS -->
-    <div class="call-controls">
-      <button class="ctrl-btn active-on" id="btn-mic" onclick="toggleMic()" title="Mic">🎤</button>
-      <button class="ctrl-btn active-on" id="btn-cam" onclick="toggleCam()" title="Kamera">📷</button>
-      <button class="ctrl-btn normal" id="btn-screen" onclick="toggleScreen()" title="Share Layar">🖥️</button>
-      <button class="ctrl-btn normal" id="btn-blur" onclick="toggleBlur()" title="Blur BG">🌫️</button>
-      <button class="ctrl-btn normal" id="btn-record" onclick="toggleRecord()" title="Rekam">⏺️</button>
-      <button class="ctrl-btn normal" id="btn-pip" onclick="togglePIP()" title="Picture in Picture">📺</button>
-      <button class="ctrl-btn normal" id="btn-hand" onclick="raiseHand()" title="Angkat Tangan">✋</button>
-      <button class="ctrl-btn normal" id="btn-react" onclick="toggleReactions()" title="Reaksi">😊</button>
-      <button class="ctrl-btn normal" id="btn-caption" onclick="toggleCaption()" title="Caption">💬</button>
-      <button class="ctrl-btn end" onclick="endCall()" title="Akhiri">📵</button>
-    </div>
-
-    <!-- SIDE PANEL -->
-    <div class="call-side hidden" id="call-side">
-      <div class="side-tabs">
-        <button class="side-tab active" onclick="switchSideTab('chat-tab',this)">💬 Chat</button>
-        <button class="side-tab" onclick="switchSideTab('people-tab',this)">👥 Peserta</button>
-        <button class="side-tab" onclick="switchSideTab('poll-tab',this)">📊 Polling</button>
-      </div>
-      <div class="side-content" id="chat-tab">
-        <div id="call-messages" style="min-height:200px;display:flex;flex-direction:column;gap:8px;margin-bottom:10px;"></div>
-        <div style="display:flex;gap:8px;">
-          <input type="text" id="call-chat-input" placeholder="Pesan..." style="flex:1;background:var(--surface3);border:1px solid var(--border);border-radius:10px;padding:8px 12px;color:var(--text);font-size:13px;outline:none;" onkeydown="if(event.key==='Enter')sendCallChat()">
-          <button class="send-btn" onclick="sendCallChat()" style="width:34px;height:34px;font-size:14px;">➤</button>
-        </div>
-      </div>
-      <div class="side-content hidden" id="people-tab">
-        <div id="participants-list"></div>
-      </div>
-      <div class="side-content hidden" id="poll-tab">
-        <div style="margin-bottom:12px;">
-          <div style="font-size:14px;font-weight:600;margin-bottom:12px;">📊 Polling Aktif</div>
-          <div style="background:var(--surface3);border-radius:12px;padding:16px;margin-bottom:12px;">
-            <div style="font-size:13px;margin-bottom:12px;">Platform meeting favorit kamu?</div>
-            <div id="poll-options"></div>
-          </div>
-          <button class="btn btn-secondary" style="width:100%;font-size:13px;" onclick="createPoll()">+ Buat Polling Baru</button>
-        </div>
-      </div>
-    </div>
-  </div>
-
-  <!-- CHAT -->
-  <div class="page" id="chat">
-    <div class="chat-list">
-      <div class="chat-header">
-        <h2>💬 Chat</h2>
-        <button class="icon-btn" onclick="newChatModal()" title="Chat Baru">✏️</button>
-      </div>
-      <div class="search-box"><span class="search-icon">🔍</span><input type="text" placeholder="Cari percakapan..." oninput="filterChats(this.value)"></div>
-      <div class="chat-items" id="chat-items"></div>
-    </div>
+    <!-- CHAT WINDOW MOCKUP -->
     <div class="chat-window">
-      <div class="chat-win-header" id="chat-win-header">
-        <div class="chat-item-avatar" id="cw-avatar" style="width:38px;height:38px;font-size:14px;"></div>
-        <div class="chat-win-info">
-          <div class="chat-win-name" id="cw-name">Pilih percakapan</div>
-          <div class="chat-win-status" id="cw-status">Online</div>
-        </div>
-        <div class="chat-win-actions">
-          <button class="icon-btn" onclick="callFromChat()" title="Video Call">🎥</button>
-          <button class="icon-btn" title="Voice Call">📞</button>
-          <button class="icon-btn" title="Info">ℹ️</button>
-        </div>
+      <div class="win-titlebar">
+        <div class="tl" style="background:#e24b4a"></div>
+        <div class="tl" style="background:#ef9f27"></div>
+        <div class="tl" style="background:#639922"></div>
+        <span class="win-title">ChatVerse — Sesi Aktif</span>
       </div>
-      <div class="messages-area" id="messages-area"></div>
-      <div style="padding:0 16px 4px;">
-        <div class="typing-indicator hidden" id="typing-indicator">
-          <div class="typing-dots"><span></span><span></span><span></span></div>
-          <span id="typing-name">sedang mengetik...</span>
-        </div>
-      </div>
-      <div class="msg-input-area">
-        <button class="icon-btn" onclick="attachFile()">📎</button>
-        <button class="icon-btn" onclick="voiceNote()">🎙️</button>
-        <textarea class="msg-input" id="msg-input" placeholder="Ketik pesan..." rows="1" onkeydown="onMsgKey(event)" oninput="autoResize(this)"></textarea>
-        <button class="icon-btn" onclick="showEmojiPicker()">😊</button>
-        <button class="send-btn" onclick="sendMsg()">➤</button>
-      </div>
-    </div>
-  </div>
 
-  <!-- MEETING -->
-  <div class="page" id="meeting">
-    <div class="meeting-container">
-      <h1 class="page-title">📅 Meeting</h1>
-      <p class="page-sub">Jadwalkan, buat, dan kelola meeting profesional.</p>
-      <div class="meeting-grid">
-        <div class="meeting-card">
-          <h3>🚀 Meeting Instan</h3>
-          <div class="form-group">
-            <label class="form-label">Nama Meeting</label>
-            <input class="form-input" id="instant-name" placeholder="Diskusi Tim Pagi" value="Meeting Tim">
+      <div class="cam-grid">
+        <div class="cam-box cam-you">
+          <div class="cam-avatar-wrap">
+            <div class="avatar-circle av-you">Y</div>
+            <span class="cam-lbl">Kamu</span>
           </div>
-          <div class="form-group">
-            <label class="form-label">Password (opsional)</label>
-            <input class="form-input" id="instant-pass" placeholder="Kosongkan jika tidak perlu">
+          <div class="cam-corner">🇮🇩 Indonesia</div>
+        </div>
+        <div class="cam-box cam-them">
+          <div class="cam-avatar-wrap">
+            <div class="avatar-circle av-them">?</div>
+            <span class="cam-lbl">Stranger</span>
           </div>
-          <div style="display:flex;gap:8px;margin-top:4px;">
-            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" id="waiting-room" style="accent-color:var(--accent)"> Waiting Room</label>
-            <label style="display:flex;align-items:center;gap:6px;font-size:13px;cursor:pointer;"><input type="checkbox" id="mute-entry" style="accent-color:var(--accent)" checked> Mute saat masuk</label>
-          </div>
-          <button class="btn btn-primary" style="width:100%;margin-top:16px;" onclick="startInstantMeeting()">▶ Mulai Sekarang</button>
-        </div>
-        <div class="meeting-card">
-          <h3>📆 Jadwalkan Meeting</h3>
-          <div class="form-group">
-            <label class="form-label">Judul</label>
-            <input class="form-input" id="sched-title" placeholder="Sprint Planning">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Tanggal & Waktu</label>
-            <input class="form-input" type="datetime-local" id="sched-time">
-          </div>
-          <div class="form-group">
-            <label class="form-label">Peserta (pisah koma)</label>
-            <input class="form-input" id="sched-participants" placeholder="budi@mail.com, citra@mail.com">
-          </div>
-          <button class="btn btn-secondary" style="width:100%;margin-top:4px;" onclick="scheduleMeeting()">📅 Jadwalkan</button>
+          <div class="cam-corner">🇯🇵 Japan</div>
+          <div class="match-tag">✓ Matched</div>
         </div>
       </div>
 
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px;">
-        <h2 style="font-family:'Syne',sans-serif;font-size:20px;font-weight:700;">📋 Daftar Meeting</h2>
-        <button class="btn btn-secondary" style="padding:8px 16px;font-size:13px;" onclick="refreshMeetings()">🔄 Refresh</button>
+      <div class="action-bar">
+        <button class="act act-next">
+          <span class="act-icon">⏭</span>
+          <span>Next</span>
+        </button>
+        <button class="act">
+          <span class="act-icon">🔇</span>
+          <span>Mute</span>
+        </button>
+        <button class="act">
+          <span class="act-icon">📷</span>
+          <span>Blur Cam</span>
+        </button>
+        <button class="act">
+          <span class="act-icon">➕</span>
+          <span>Add Friend</span>
+        </button>
+        <button class="act">
+          <span class="act-icon">💬</span>
+          <span>Chat Teks</span>
+        </button>
+        <button class="act">
+          <span class="act-icon">🚩</span>
+          <span>Report</span>
+        </button>
       </div>
-      <div class="meeting-list" id="meeting-list"></div>
+
+      <div class="feat-strip">
+        <div class="feat-item"><div class="feat-icon">🌍</div><div class="feat-lbl">Filter Negara</div></div>
+        <div class="feat-item"><div class="feat-icon">🎮</div><div class="feat-lbl">Filter Minat</div></div>
+        <div class="feat-item"><div class="feat-icon">🛡️</div><div class="feat-lbl">AI Safety</div></div>
+        <div class="feat-item"><div class="feat-icon">🏆</div><div class="feat-lbl">Level & Badge</div></div>
+      </div>
     </div>
-  </div>
+  </section>
 
-  <!-- WHITEBOARD -->
-  <div class="page" id="whiteboard">
-    <div class="wb-toolbar">
-      <button class="wb-tool active" id="wb-pen" onclick="setWbTool('pen',this)" title="Pena">✏️</button>
-      <button class="wb-tool" id="wb-eraser" onclick="setWbTool('eraser',this)" title="Hapus">🧹</button>
-      <button class="wb-tool" id="wb-rect" onclick="setWbTool('rect',this)" title="Kotak">⬛</button>
-      <button class="wb-tool" id="wb-circle" onclick="setWbTool('circle',this)" title="Lingkaran">⭕</button>
-      <button class="wb-tool" id="wb-line" onclick="setWbTool('line',this)" title="Garis">📏</button>
-      <button class="wb-tool" id="wb-text" onclick="setWbTool('text',this)" title="Teks">T</button>
-      <div class="sep" style="width:1px;height:30px;background:var(--border);margin:0 4px;"></div>
-      <div style="display:flex;gap:6px;align-items:center;">
-        <div class="wb-color active" style="background:#111" onclick="setWbColor('#111',this)"></div>
-        <div class="wb-color" style="background:#ef4444" onclick="setWbColor('#ef4444',this)"></div>
-        <div class="wb-color" style="background:#f59e0b" onclick="setWbColor('#f59e0b',this)"></div>
-        <div class="wb-color" style="background:#22c55e" onclick="setWbColor('#22c55e',this)"></div>
-        <div class="wb-color" style="background:#4f8ef7" onclick="setWbColor('#4f8ef7',this)"></div>
-        <div class="wb-color" style="background:#a855f7" onclick="setWbColor('#a855f7',this)"></div>
-        <input type="color" id="wb-custom-color" style="width:24px;height:24px;border:none;background:none;cursor:pointer;" onchange="setWbColor(this.value,null)" title="Warna custom">
-      </div>
-      <div class="sep" style="width:1px;height:30px;background:var(--border);margin:0 4px;"></div>
-      <input type="range" class="wb-size" id="wb-size" min="1" max="30" value="4">
-      <span id="wb-size-label" style="font-size:12px;color:var(--text2);min-width:30px;">4px</span>
-      <div class="sep" style="width:1px;height:30px;background:var(--border);margin:0 4px;"></div>
-      <button class="wb-tool" onclick="wbUndo()" title="Undo">↩️</button>
-      <button class="wb-tool" onclick="wbClear()" title="Hapus semua">🗑️</button>
-      <button class="wb-tool" onclick="downloadWB()" title="Simpan">💾</button>
-      <span style="margin-left:auto;font-size:12px;color:var(--text2);">👥 3 orang berkolaborasi</span>
-    </div>
-    <canvas id="wb-canvas"></canvas>
-  </div>
+  <!-- FILTER SECTION -->
+  <section class="section">
+    <p class="section-tag">Fitur Utama</p>
+    <h2 class="section-title">Filter sesuai selera kamu</h2>
+    <p class="section-sub">Temukan orang yang tepat dengan filter gratis tanpa batas.</p>
 
-  <!-- SETTINGS -->
-  <div class="page" id="settings">
-    <div class="settings-container">
-      <div class="profile-header">
-        <div class="profile-avatar">A</div>
-        <div class="profile-info">
-          <h2>Andi Pratama</h2>
-          <p>andi.pratama@nexcall.app · <span style="color:var(--green)">● Online</span></p>
-        </div>
-        <button class="btn btn-secondary" style="margin-left:auto;">Edit Profil</button>
-      </div>
-      <h1 class="page-title">⚙️ Pengaturan</h1>
-      <p class="page-sub" style="margin-bottom:24px;">Kustomisasi pengalaman NexCall kamu.</p>
-
-      <div class="settings-section">
-        <h3>🎥 Video & Audio</h3>
-        <div class="setting-row">
-          <div class="setting-info"><h4>HD Video</h4><p>Aktifkan kualitas 1080p saat jaringan stabil</p></div>
-          <button class="toggle on" onclick="this.classList.toggle('on')"></button>
-        </div>
-        <div class="setting-row">
-          <div class="setting-info"><h4>Noise Cancellation</h4><p>Hilangkan suara latar dengan AI</p></div>
-          <button class="toggle on" onclick="this.classList.toggle('on')"></button>
-        </div>
-        <div class="setting-row">
-          <div class="setting-info"><h4>Background Blur</h4><p>Blur background otomatis saat call</p></div>
-          <button class="toggle" onclick="this.classList.toggle('on')"></button>
-        </div>
-        <div class="setting-row">
-          <div class="setting-info"><h4>Mirror Camera</h4><p>Mirror tampilan kamera lokal</p></div>
-          <button class="toggle on" onclick="this.classList.toggle('on')"></button>
+    <div class="filter-panel">
+      <div class="filter-group">
+        <label>Negara</label>
+        <div class="filter-pills">
+          <button class="pill active" onclick="togglePill(this)">🌐 Semua</button>
+          <button class="pill" onclick="togglePill(this)">🇮🇩 Indonesia</button>
+          <button class="pill" onclick="togglePill(this)">🇯🇵 Jepang</button>
+          <button class="pill" onclick="togglePill(this)">🇺🇸 Amerika</button>
+          <button class="pill" onclick="togglePill(this)">🇰🇷 Korea</button>
+          <button class="pill" onclick="togglePill(this)">🇬🇧 Inggris</button>
+          <button class="pill" onclick="togglePill(this)">🇧🇷 Brazil</button>
         </div>
       </div>
 
-      <div class="settings-section">
-        <h3>💬 Chat & Notifikasi</h3>
-        <div class="setting-row">
-          <div class="setting-info"><h4>Read Receipt</h4><p>Tampilkan tanda centang biru</p></div>
-          <button class="toggle on" onclick="this.classList.toggle('on')"></button>
-        </div>
-        <div class="setting-row">
-          <div class="setting-info"><h4>Typing Indicator</h4><p>Tampilkan saat orang mengetik</p></div>
-          <button class="toggle on" onclick="this.classList.toggle('on')"></button>
-        </div>
-        <div class="setting-row">
-          <div class="setting-info"><h4>Notifikasi Desktop</h4><p>Tampilkan notifikasi di browser</p></div>
-          <button class="toggle" onclick="this.classList.toggle('on');requestNotif()"></button>
+      <div class="filter-group">
+        <label>Bahasa</label>
+        <div class="filter-pills">
+          <button class="pill active" onclick="togglePill(this)">Semua</button>
+          <button class="pill" onclick="togglePill(this)">Bahasa Indonesia</button>
+          <button class="pill" onclick="togglePill(this)">English</button>
+          <button class="pill" onclick="togglePill(this)">日本語</button>
+          <button class="pill" onclick="togglePill(this)">한국어</button>
+          <button class="pill" onclick="togglePill(this)">Español</button>
         </div>
       </div>
 
-      <div class="settings-section">
-        <h3>🔒 Keamanan & Privasi</h3>
-        <div class="setting-row">
-          <div class="setting-info"><h4>End-to-End Encryption</h4><p>Semua pesan & call dienkripsi</p></div>
-          <button class="toggle on" onclick="this.classList.toggle('on')"></button>
-        </div>
-        <div class="setting-row">
-          <div class="setting-info"><h4>Verifikasi 2 Langkah</h4><p>Keamanan ekstra untuk akun kamu</p></div>
-          <button class="toggle" onclick="this.classList.toggle('on')"></button>
-        </div>
-        <div class="setting-row">
-          <div class="setting-info"><h4>Waiting Room Default</h4><p>Semua meeting punya waiting room</p></div>
-          <button class="toggle" onclick="this.classList.toggle('on')"></button>
+      <div class="filter-group">
+        <label>Range Umur: <span id="ageOut" style="color:#6ea8f7">18–30</span></label>
+        <div class="range-row">
+          <span style="font-size:12px;color:var(--hint)">18</span>
+          <input type="range" min="18" max="60" value="30" id="ageSlider" oninput="updateAge(this.value)" />
+          <span style="font-size:12px;color:var(--hint)">60+</span>
         </div>
       </div>
 
-      <div class="settings-section">
-        <h3>🤖 AI & Fitur Canggih</h3>
-        <div class="setting-row">
-          <div class="setting-info"><h4>AI Meeting Summary</h4><p>Ringkasan otomatis setelah meeting</p></div>
-          <button class="toggle on" onclick="this.classList.toggle('on')"></button>
-        </div>
-        <div class="setting-row">
-          <div class="setting-info"><h4>Live Captions</h4><p>Subtitle otomatis selama call</p></div>
-          <button class="toggle" onclick="this.classList.toggle('on')"></button>
-        </div>
-        <div class="setting-row">
-          <div class="setting-info"><h4>Real-time Translate</h4><p>Terjemahkan caption ke Bahasa Indonesia</p></div>
-          <button class="toggle" onclick="this.classList.toggle('on')"></button>
+      <div class="filter-group">
+        <label>Minat / Hobi</label>
+        <div class="filter-pills">
+          <button class="pill" onclick="togglePill(this)">🎮 Gaming</button>
+          <button class="pill" onclick="togglePill(this)">🎵 Musik</button>
+          <button class="pill active" onclick="togglePill(this)">🎌 Anime</button>
+          <button class="pill" onclick="togglePill(this)">⚽ Olahraga</button>
+          <button class="pill" onclick="togglePill(this)">🎨 Seni</button>
+          <button class="pill" onclick="togglePill(this)">📚 Belajar</button>
+          <button class="pill" onclick="togglePill(this)">✈️ Travel</button>
+          <button class="pill" onclick="togglePill(this)">🍜 Kuliner</button>
         </div>
       </div>
+
+      <button class="btn-main" style="align-self:flex-start" onclick="startChat()">🔍 Cari Match Sekarang</button>
     </div>
-  </div>
+  </section>
 
-</div><!-- /main -->
-</div><!-- /body -->
+  <!-- FEATURES GRID -->
+  <section class="section" style="padding-top:0">
+    <p class="section-tag">Kenapa ChatVerse?</p>
+    <h2 class="section-title">Lengkap, cepat, aman</h2>
+    <p class="section-sub">Semua fitur penting tersedia gratis. Tanpa ribet.</p>
 
-<!-- MODALS -->
-<div class="modal-overlay" id="join-modal">
-  <div class="modal">
-    <h2>🔗 Join Meeting</h2>
-    <p>Masukkan kode 6 digit dari host untuk bergabung.</p>
-    <div style="text-align:center;">
-      <input type="text" class="room-code-input" id="join-code-input" placeholder="000000" maxlength="6" oninput="this.value=this.value.replace(/\D/g,'')">
+    <div class="features-grid">
+      <div class="feat-card"><div class="feat-card-icon">⚡</div><h3>Match Super Cepat</h3><p>1 klik langsung connect. Loading ringan, skip mulus tanpa lag.</p></div>
+      <div class="feat-card"><div class="feat-card-icon">🎥</div><h3>Video + Voice + Teks</h3><p>Pilih mode chat sesuai situasi kamu kapan saja.</p></div>
+      <div class="feat-card"><div class="feat-card-icon">👥</div><h3>Friend System</h3><p>Add teman baru, simpan riwayat, chat lagi kapan saja.</p></div>
+      <div class="feat-card"><div class="feat-card-icon">🛡️</div><h3>AI Moderation</h3><p>Deteksi konten buruk otomatis. Blur kamera. Block permanen.</p></div>
+      <div class="feat-card"><div class="feat-card-icon">🌍</div><h3>Filter Gratis</h3><p>Negara, bahasa, umur, dan minat — semua tanpa bayar.</p></div>
+      <div class="feat-card"><div class="feat-card-icon">👤</div><h3>Guest Mode</h3><p>Langsung chat tanpa daftar. Login Google/Discord opsional.</p></div>
+      <div class="feat-card"><div class="feat-card-icon">🏆</div><h3>Gamifikasi</h3><p>Level akun, badge ramah, daily reward bikin makin seru.</p></div>
+      <div class="feat-card"><div class="feat-card-icon">📱</div><h3>Mobile Friendly</h3><p>Dark mode, UI modern, fast loading di semua perangkat.</p></div>
     </div>
-    <div class="form-group" style="margin-top:14px;">
-      <label class="form-label">Password (jika ada)</label>
-      <input class="form-input" id="join-pass" placeholder="Kosongkan jika tidak ada">
+  </section>
+
+  <!-- SAFETY -->
+  <section class="section" style="padding-top:0">
+    <p class="section-tag">Keamanan</p>
+    <h2 class="section-title">Aman untuk semua</h2>
+    <p class="section-sub">Sistem moderasi berlapis untuk pengalaman chat yang nyaman.</p>
+    <ul class="safety-list">
+      <li><span>🤖</span> AI deteksi konten buruk secara real-time — chat langsung diputus otomatis</li>
+      <li><span>📷</span> Blur kamera otomatis saat terdeteksi konten tidak pantas</li>
+      <li><span>🚩</span> Tombol report 1 klik — tim moderasi merespons dalam 24 jam</li>
+      <li><span>🔒</span> Block user permanen — mereka tidak bisa ketemu kamu lagi selamanya</li>
+      <li><span>🔞</span> Verifikasi umur opsional untuk melindungi pengguna muda</li>
+    </ul>
+  </section>
+
+  <!-- GAMIFICATION -->
+  <section class="section" style="padding-top:0">
+    <p class="section-tag">Gamifikasi</p>
+    <h2 class="section-title">Naik level, kumpulin badge</h2>
+    <p class="section-sub">Makin sering chat, makin banyak reward yang kamu dapat.</p>
+    <div class="gamif-row">
+      <div class="badge-card">
+        <div class="badge-icon">🌟</div>
+        <div class="badge-name">Newbie Friendly</div>
+        <div class="badge-desc">Chat pertama kamu</div>
+        <div class="xp-bar-wrap"><div class="xp-bar" style="width:100%"></div></div>
+      </div>
+      <div class="badge-card">
+        <div class="badge-icon">🌍</div>
+        <div class="badge-name">World Explorer</div>
+        <div class="badge-desc">Chat ke 10 negara</div>
+        <div class="xp-bar-wrap"><div class="xp-bar" style="width:60%"></div></div>
+      </div>
+      <div class="badge-card">
+        <div class="badge-icon">🔥</div>
+        <div class="badge-name">Hot Streak</div>
+        <div class="badge-desc">7 hari berturut-turut</div>
+        <div class="xp-bar-wrap"><div class="xp-bar" style="width:40%"></div></div>
+      </div>
+      <div class="badge-card">
+        <div class="badge-icon">👑</div>
+        <div class="badge-name">Legend</div>
+        <div class="badge-desc">1000 chat selesai</div>
+        <div class="xp-bar-wrap"><div class="xp-bar" style="width:15%"></div></div>
+      </div>
     </div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeModal('join-modal')">Batal</button>
-      <button class="btn btn-primary" onclick="joinWithCode()">🚀 Join</button>
+  </section>
+
+  <!-- ROADMAP -->
+  <section class="section" style="padding-top:0; text-align:center">
+    <p class="section-tag">Roadmap</p>
+    <h2 class="section-title">Perjalanan ChatVerse</h2>
+    <p class="section-sub" style="margin:0 auto 36px">Dari MVP sederhana sampai platform global.</p>
+    <div class="roadmap">
+      <div class="road-item road-done">✅ V1.0 — Random Chat Dasar</div>
+      <div class="road-item road-todo">🔜 V2.0 — Friend System</div>
+      <div class="road-item road-todo">🤖 V3.0 — AI Moderation</div>
+      <div class="road-item road-todo">📱 V4.0 — Mobile App</div>
+      <div class="road-item road-todo">🌐 V5.0 — Global Trending Rooms</div>
     </div>
-  </div>
-</div>
+  </section>
 
-<div class="modal-overlay" id="room-created-modal">
-  <div class="modal">
-    <h2>🎉 Room Dibuat!</h2>
-    <p>Bagikan kode ini ke orang yang ingin kamu undang.</p>
-    <div class="code-display">
-      <div class="code-big" id="modal-room-code">---</div>
-      <div class="code-hint">Klik untuk menyalin kode</div>
-    </div>
-    <div style="display:flex;gap:10px;margin-top:12px;">
-      <input class="form-input" id="invite-link" readonly style="font-size:12px;">
-      <button class="btn btn-secondary" onclick="copyLink()">📋 Salin</button>
-    </div>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="closeModal('room-created-modal')">Nanti</button>
-      <button class="btn btn-primary" onclick="enterCall()">▶ Masuk Call</button>
-    </div>
-  </div>
-</div>
+  <!-- FOOTER -->
+  <footer>
+    <p style="margin-bottom:6px"><strong>ChatVerse</strong> — Meet strangers worldwide instantly.</p>
+    <p>© 2025 ChatVerse · Semua fitur penting gratis · Moderasi ketat · UI modern</p>
+  </footer>
 
-<div class="modal-overlay" id="end-call-modal">
-  <div class="modal">
-    <h2>📵 Akhiri Call?</h2>
-    <p>Kamu adalah host. Pilih opsi di bawah.</p>
-    <div class="modal-actions">
-      <button class="btn btn-secondary" onclick="leaveOnly()">🚶 Keluar (lanjutkan)</button>
-      <button class="btn btn-danger" onclick="endForAll()">📵 Akhiri untuk semua</button>
-    </div>
-  </div>
-</div>
+</div><!-- end bg-wrap -->
 
-<!-- TOAST CONTAINER -->
-<div class="toast-container" id="toast-container"></div>
+<!-- ── FIREBASE ── -->
+<script type="module">
+  import { initializeApp }                        from "https://www.gstatic.com/firebasejs/12.12.1/firebase-app.js";
+  import { getAnalytics }                         from "https://www.gstatic.com/firebasejs/12.12.1/firebase-analytics.js";
+  import { getAuth, GoogleAuthProvider,
+           signInWithPopup, signInAnonymously,
+           onAuthStateChanged, signOut }          from "https://www.gstatic.com/firebasejs/12.12.1/firebase-auth.js";
+  import { getFirestore, doc, setDoc,
+           getDoc, updateDoc, serverTimestamp }   from "https://www.gstatic.com/firebasejs/12.12.1/firebase-firestore.js";
+  import { getDatabase, ref, set, remove,
+           onValue, onDisconnect }                from "https://www.gstatic.com/firebasejs/12.12.1/firebase-database.js";
 
-<!-- CAPTION BAR -->
-<div id="caption-bar" class="hidden" style="position:fixed;bottom:80px;left:50%;transform:translateX(-50%);background:rgba(0,0,0,0.85);color:#fff;padding:10px 24px;border-radius:16px;font-size:14px;max-width:60%;text-align:center;z-index:20;backdrop-filter:blur(8px);">
-  🎙️ <span id="caption-text">Caption akan muncul di sini...</span>
-</div>
-
-<script>
-// ============================================================
-// NAVIGATION
-// ============================================================
-let currentPage = 'home';
-function goPage(page, btn) {
-  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
-  document.getElementById(page).classList.add('active');
-  document.querySelectorAll('.nav-btn').forEach(b => b.classList.remove('active'));
-  if(btn) btn.classList.add('active');
-  currentPage = page;
-  if(page === 'whiteboard') initWhiteboard();
-  if(page === 'chat') renderChatList();
-  if(page === 'meeting') renderMeetings();
-}
-
-// ============================================================
-// ROOM / CODE SYSTEM
-// ============================================================
-let currentRoom = null;
-function genCode() { return Math.floor(100000+Math.random()*900000).toString(); }
-
-function startNewCall() {
-  const code = genCode();
-  currentRoom = code;
-  document.getElementById('modal-room-code').textContent = code;
-  document.getElementById('invite-link').value = `${location.href.split('?')[0]}?room=${code}`;
-  openModal('room-created-modal');
-  // Auto-copy animation
-  document.querySelector('.code-big').onclick = () => {
-    navigator.clipboard?.writeText(code);
-    toast('Kode disalin!', 'success');
+  // ── Config (dari project ryzenshiky) ──
+  const firebaseConfig = {
+    apiKey:            "AIzaSyAf8Ez0nNgIgWpOFaG7bf9Y-jxJPUtC5Lk",
+    authDomain:        "ryzenshiky.firebaseapp.com",
+    projectId:         "ryzenshiky",
+    storageBucket:     "ryzenshiky.firebasestorage.app",
+    messagingSenderId: "421702088498",
+    appId:             "1:421702088498:web:f6b0ec9fb6a1ef707fc92b",
+    measurementId:     "G-6641Q7XKGL",
+    databaseURL:       "https://ryzenshiky-default-rtdb.asia-southeast1.firebasedatabase.app"
   };
-}
 
-function showJoinModal() { openModal('join-modal'); }
+  const app       = initializeApp(firebaseConfig);
+  const analytics = getAnalytics(app);
+  const auth      = getAuth(app);
+  const db        = getFirestore(app);
+  const rtdb      = getDatabase(app);
 
-function joinWithCode() {
-  const code = document.getElementById('join-code-input').value.trim();
-  if(code.length !== 6) { toast('Masukkan kode 6 digit', 'error'); return; }
-  currentRoom = code;
-  closeModal('join-modal');
-  enterCall();
-  toast(`Bergabung ke room ${code}`, 'success');
-}
-
-function enterCall() {
-  closeModal('room-created-modal');
-  document.getElementById('call-room-label').textContent = `Room: ${currentRoom}`;
-  goPage('call', document.querySelector('[data-page=call]'));
-  startLocalVideo();
-  startTimer();
-  renderParticipants();
-  renderPoll();
-  toast('Berhasil masuk ke room!', 'success');
-}
-
-// ============================================================
-// VIDEO CALL
-// ============================================================
-let localStream = null;
-let micOn = true, camOn = true, screenSharing = false, blurOn = false, recording = false, pipOn = false, captionOn = false;
-let callInterval = null, callSeconds = 0;
-let handsRaised = new Set();
-let reactionsVisible = false;
-
-async function startLocalVideo() {
-  try {
-    localStream = await navigator.mediaDevices.getUserMedia({video:true, audio:true});
-    const v = document.getElementById('local-video');
-    v.srcObject = localStream;
-    document.getElementById('local-avatar').style.display = 'none';
-    v.style.display = 'block';
-    toast('Kamera & mikrofon aktif 🎥', 'success');
-  } catch(e) {
-    document.getElementById('local-video').style.display = 'none';
-    document.getElementById('local-avatar').style.display = 'flex';
-    toast('Tidak bisa akses kamera/mic', 'error');
-  }
-}
-
-function toggleMic() {
-  micOn = !micOn;
-  const btn = document.getElementById('btn-mic');
-  if(localStream) localStream.getAudioTracks().forEach(t => t.enabled = micOn);
-  btn.textContent = micOn ? '🎤' : '🔇';
-  btn.className = micOn ? 'ctrl-btn active-on' : 'ctrl-btn off';
-  toast(micOn ? 'Mikrofon aktif' : 'Mikrofon mati', 'info');
-}
-
-function toggleCam() {
-  camOn = !camOn;
-  const btn = document.getElementById('btn-cam');
-  const v = document.getElementById('local-video');
-  const av = document.getElementById('local-avatar');
-  if(localStream) localStream.getVideoTracks().forEach(t => t.enabled = camOn);
-  v.style.display = camOn ? 'block' : 'none';
-  av.style.display = camOn ? 'none' : 'flex';
-  btn.textContent = camOn ? '📷' : '🚫';
-  btn.className = camOn ? 'ctrl-btn active-on' : 'ctrl-btn off';
-  toast(camOn ? 'Kamera aktif' : 'Kamera mati', 'info');
-}
-
-async function toggleScreen() {
-  if(!screenSharing) {
-    try {
-      const screenStream = await navigator.mediaDevices.getDisplayMedia({video:true});
-      const v = document.getElementById('local-video');
-      v.srcObject = screenStream;
-      screenSharing = true;
-      document.getElementById('btn-screen').className = 'ctrl-btn active-on';
-      toast('Screen sharing aktif 🖥️', 'success');
-      screenStream.getVideoTracks()[0].onended = () => {
-        screenSharing = false;
-        document.getElementById('btn-screen').className = 'ctrl-btn normal';
-        if(localStream) document.getElementById('local-video').srcObject = localStream;
-        toast('Screen sharing dihentikan', 'info');
-      };
-    } catch(e) { toast('Screen sharing dibatalkan', 'info'); }
-  } else {
-    screenSharing = false;
-    document.getElementById('btn-screen').className = 'ctrl-btn normal';
-    if(localStream) document.getElementById('local-video').srcObject = localStream;
-    toast('Screen sharing dihentikan', 'info');
-  }
-}
-
-function toggleBlur() {
-  blurOn = !blurOn;
-  const v = document.getElementById('local-video');
-  v.style.filter = blurOn ? 'blur(8px)' : '';
-  document.getElementById('btn-blur').className = blurOn ? 'ctrl-btn active-on' : 'ctrl-btn normal';
-  toast(blurOn ? 'Background blur aktif 🌫️' : 'Blur dimatikan', 'info');
-}
-
-function toggleRecord() {
-  recording = !recording;
-  const btn = document.getElementById('btn-record');
-  const ind = document.getElementById('rec-indicator');
-  btn.className = recording ? 'ctrl-btn active-on' : 'ctrl-btn normal';
-  ind.classList.toggle('hidden', !recording);
-  toast(recording ? '⏺️ Rekaman dimulai' : '⏹️ Rekaman dihentikan & disimpan', recording ? 'info' : 'success');
-}
-
-function togglePIP() {
-  pipOn = !pipOn;
-  const pip = document.getElementById('pip-video');
-  const pv = document.getElementById('pip-vid');
-  pip.classList.toggle('hidden', !pipOn);
-  if(pipOn && localStream) {
-    pv.srcObject = localStream;
-    toast('Picture-in-Picture aktif 📺', 'info');
-    // Try native PiP
-    pv.play().then(() => pv.requestPictureInPicture?.()).catch(()=>{});
-  } else {
-    if(document.pictureInPictureElement) document.exitPictureInPicture?.();
-  }
-  document.getElementById('btn-pip').className = pipOn ? 'ctrl-btn active-on' : 'ctrl-btn normal';
-}
-
-function toggleCaption() {
-  captionOn = !captionOn;
-  document.getElementById('caption-bar').classList.toggle('hidden', !captionOn);
-  document.getElementById('btn-caption').className = captionOn ? 'ctrl-btn active-on' : 'ctrl-btn normal';
-  if(captionOn) simulateCaptions();
-  toast(captionOn ? '💬 Caption aktif' : 'Caption dimatikan', 'info');
-}
-
-const captions = ['Halo semua, selamat bergabung...','Hari ini kita akan diskusi progress sprint.','Ada yang mau ditambahkan sebelum mulai?','Saya sudah selesai dengan task backend kemarin.','Oke, bagus sekali. Lanjut ke bagian frontend.'];
-let capIdx = 0;
-function simulateCaptions() {
-  if(!captionOn) return;
-  document.getElementById('caption-text').textContent = captions[capIdx % captions.length];
-  capIdx++;
-  setTimeout(simulateCaptions, 4000);
-}
-
-function raiseHand() {
-  const btn = document.getElementById('btn-hand');
-  if(handsRaised.has('local')) {
-    handsRaised.delete('local');
-    btn.className = 'ctrl-btn normal';
-    toast('Tangan diturunkan', 'info');
-  } else {
-    handsRaised.add('local');
-    btn.className = 'ctrl-btn active-on raise-hand-anim';
-    toast('✋ Tangan diangkat! Host akan melihat.', 'success');
-  }
-}
-
-function toggleReactions() {
-  reactionsVisible = !reactionsVisible;
-  document.getElementById('reactions-overlay').classList.toggle('visible', reactionsVisible);
-}
-
-function sendReaction(emoji) {
-  reactionsVisible = false;
-  document.getElementById('reactions-overlay').classList.remove('visible');
-  const grid = document.getElementById('video-grid');
-  const el = document.createElement('div');
-  el.className = 'floating-emoji';
-  el.textContent = emoji;
-  el.style.left = (30+Math.random()*40)+'%';
-  el.style.bottom = '80px';
-  grid.appendChild(el);
-  setTimeout(() => el.remove(), 2000);
-}
-
-let layoutMode = 0;
-const layouts = ['trio','duo','quad','multi','solo'];
-function toggleLayout() {
-  layoutMode = (layoutMode+1) % layouts.length;
-  const grid = document.getElementById('video-grid');
-  grid.className = 'video-grid ' + layouts[layoutMode];
-  toast(`Layout: ${layouts[layoutMode]}`, 'info');
-}
-
-function toggleSidePanel() {
-  const panel = document.getElementById('call-side');
-  panel.classList.toggle('hidden');
-  switchSideTab('chat-tab', document.querySelector('.side-tab'));
-}
-
-function showParticipants() {
-  const panel = document.getElementById('call-side');
-  panel.classList.remove('hidden');
-  switchSideTab('people-tab', document.querySelectorAll('.side-tab')[1]);
-}
-
-function switchSideTab(tabId, btn) {
-  document.querySelectorAll('.side-content').forEach(t => t.classList.add('hidden'));
-  document.getElementById(tabId)?.classList.remove('hidden');
-  document.querySelectorAll('.side-tab').forEach(t => t.classList.remove('active'));
-  if(btn) btn.classList.add('active');
-}
-
-function startTimer() {
-  if(callInterval) clearInterval(callInterval);
-  callSeconds = 0;
-  callInterval = setInterval(() => {
-    callSeconds++;
-    const m = String(Math.floor(callSeconds/60)).padStart(2,'0');
-    const s = String(callSeconds%60).padStart(2,'0');
-    document.getElementById('call-timer').textContent = `${m}:${s}`;
-  }, 1000);
-}
-
-function endCall() { openModal('end-call-modal'); }
-function leaveOnly() {
-  closeModal('end-call-modal');
-  stopCall();
-  goPage('home', document.querySelector('[data-page=home]'));
-  toast('Kamu keluar dari call', 'info');
-}
-function endForAll() {
-  closeModal('end-call-modal');
-  stopCall();
-  goPage('home', document.querySelector('[data-page=home]'));
-  toast('Meeting diakhiri untuk semua peserta', 'info');
-}
-function stopCall() {
-  if(localStream) { localStream.getTracks().forEach(t=>t.stop()); localStream=null; }
-  if(callInterval) { clearInterval(callInterval); callInterval=null; }
-  if(document.pictureInPictureElement) document.exitPictureInPicture?.();
-  recording = false; pipOn = false; screenSharing = false; blurOn = false; captionOn = false; micOn = true; camOn = true;
-  document.getElementById('caption-bar').classList.add('hidden');
-  document.getElementById('rec-indicator').classList.add('hidden');
-  document.getElementById('call-side').classList.add('hidden');
-}
-
-// CALL CHAT
-const callChatMsgs = [
-  {who:'Budi',txt:'Halo semua 👋'},
-  {who:'Citra',txt:'Siap dimulai!'},
-];
-function renderCallChat() {
-  const div = document.getElementById('call-messages');
-  div.innerHTML = callChatMsgs.map(m=>`<div style="font-size:13px;"><span style="color:var(--accent);font-weight:600;">${m.who}: </span>${m.txt}</div>`).join('');
-  div.scrollTop = div.scrollHeight;
-}
-function sendCallChat() {
-  const inp = document.getElementById('call-chat-input');
-  if(!inp.value.trim()) return;
-  callChatMsgs.push({who:'Anda', txt: inp.value.trim()});
-  renderCallChat();
-  inp.value = '';
-}
-renderCallChat();
-
-// PARTICIPANTS
-const participantData = [
-  {name:'Anda',role:'Host',color:'linear-gradient(135deg,#4f8ef7,#7c3aed)',initial:'A',muted:false},
-  {name:'Budi Santoso',role:'Peserta',color:'linear-gradient(135deg,#f59e0b,#ef4444)',initial:'B',muted:false},
-  {name:'Citra Dewi',role:'Peserta',color:'linear-gradient(135deg,#22c55e,#0ea5e9)',initial:'C',muted:true},
-];
-function renderParticipants() {
-  document.getElementById('participants-count').textContent = `👥 ${participantData.length}`;
-  const div = document.getElementById('participants-list');
-  div.innerHTML = participantData.map((p,i)=>`
-    <div class="participant-item">
-      <div class="participant-avatar" style="background:${p.color}">${p.initial}</div>
-      <div class="participant-info">
-        <div class="participant-name">${p.name} ${p.role==='Host'?'👑':''}</div>
-        <div class="participant-role">${p.role}</div>
-      </div>
-      <div class="participant-controls">
-        <button class="p-ctrl" title="${p.muted?'Unmute':'Mute'}" onclick="toggleParticipantMute(${i},this)">${p.muted?'🔇':'🎤'}</button>
-        ${p.role!=='Host'?`<button class="p-ctrl" title="Keluarkan" onclick="removeParticipant(${i})">✕</button>`:''}
-      </div>
-    </div>`).join('');
-}
-function toggleParticipantMute(i, btn) {
-  participantData[i].muted = !participantData[i].muted;
-  btn.textContent = participantData[i].muted ? '🔇' : '🎤';
-  toast(`${participantData[i].name} di-${participantData[i].muted?'mute':'unmute'}`, 'info');
-}
-function removeParticipant(i) {
-  toast(`${participantData[i].name} dikeluarkan dari room`, 'info');
-  participantData.splice(i,1);
-  renderParticipants();
-}
-
-// POLL
-const pollOpts = ['Zoom','Google Meet','NexCall 🚀','Teams'];
-let pollVotes = [5,3,12,2];
-function renderPoll() {
-  const div = document.getElementById('poll-options');
-  const total = pollVotes.reduce((a,b)=>a+b,0);
-  div.innerHTML = pollOpts.map((o,i)=>`
-    <div style="margin-bottom:8px;cursor:pointer;" onclick="votePoll(${i})">
-      <div style="display:flex;justify-content:space-between;font-size:12px;margin-bottom:3px;"><span>${o}</span><span>${pollVotes[i]}v (${Math.round(pollVotes[i]/total*100)}%)</span></div>
-      <div style="height:6px;background:var(--surface);border-radius:4px;">
-        <div style="height:100%;width:${Math.round(pollVotes[i]/total*100)}%;background:var(--accent);border-radius:4px;transition:.4s;"></div>
-      </div>
-    </div>`).join('');
-}
-function votePoll(i) {
-  pollVotes[i]++;
-  renderPoll();
-  toast('Vote dikirim!', 'success');
-}
-function createPoll() { toast('Fitur buat polling baru coming soon!', 'info'); }
-
-// ============================================================
-// CHAT
-// ============================================================
-const chatContacts = [
-  {id:1,name:'Budi Santoso',initial:'B',color:'linear-gradient(135deg,#f59e0b,#ef4444)',online:true,lastMsg:'Siap bro, nanti saya review',time:'10:42',unread:2},
-  {id:2,name:'Tim Backend',initial:'TB',color:'linear-gradient(135deg,#22c55e,#0ea5e9)',online:true,lastMsg:'Sprint planning jam 2 siang ya',time:'09:15',unread:5,group:true},
-  {id:3,name:'Citra Dewi',initial:'C',color:'linear-gradient(135deg,#a855f7,#ec4899)',online:false,lastMsg:'Makasih banyak ya 🙏',time:'Kemarin',unread:0},
-  {id:4,name:'Project Alpha',initial:'PA',color:'linear-gradient(135deg,#f59e0b,#ef4444)',online:true,lastMsg:'File sudah di-upload',time:'Kemarin',unread:0,group:true},
-  {id:5,name:'Denis Putra',initial:'D',color:'linear-gradient(135deg,#0ea5e9,#6366f1)',online:false,lastMsg:'Oke siap',time:'Sen',unread:0},
-];
-const allMessages = {
-  1:[
-    {mine:false,text:'Hei, gimana progress fitur login?',time:'10:30',read:true},
-    {mine:true,text:'Lagi dikerjain, tinggal 80% lagi',time:'10:31',read:true,reactions:['👍']},
-    {mine:false,text:'Oke, nanti kalau ada kendala bilang ya',time:'10:35',read:true},
-    {mine:true,text:'Siap bos! Oh iya, bisa review PR saya ga?',time:'10:40',read:true},
-    {mine:false,text:'Siap bro, nanti saya review',time:'10:42',read:false},
-  ],
-  2:[
-    {mine:false,text:'Teman-teman, sprint planning jam 2 siang ya',time:'09:00',read:true,who:'Budi'},
-    {mine:false,text:'Ready dari saya!',time:'09:10',read:true,who:'Citra'},
-    {mine:true,text:'Oke siap',time:'09:12',read:true},
-    {mine:false,text:'Sprint planning jam 2 siang ya',time:'09:15',read:false,who:'Denis'},
-  ],
-  3:[{mine:true,text:'Terima kasih banyak ya untuk bantuannya!',time:'Kemarin',read:true},{mine:false,text:'Makasih banyak ya 🙏',time:'Kemarin',read:true}],
-  4:[{mine:false,text:'File sudah di-upload ke drive',time:'Kemarin',read:true,who:'Admin'}],
-  5:[{mine:true,text:'Denis, bisa join meeting besok?',time:'Sen',read:true},{mine:false,text:'Oke siap',time:'Sen',read:true}],
-};
-let activeChatId = 1;
-
-function renderChatList(filter='') {
-  const div = document.getElementById('chat-items');
-  div.innerHTML = chatContacts.filter(c=>c.name.toLowerCase().includes(filter.toLowerCase())).map(c=>`
-    <div class="chat-item ${c.id===activeChatId?'active':''}" onclick="openChat(${c.id})">
-      <div class="chat-item-avatar" style="background:${c.color}">${c.initial}
-        ${c.online?'<span class="online-dot"></span>':''}
-      </div>
-      <div class="chat-item-info">
-        <div class="chat-item-top">
-          <span class="chat-item-name">${c.name}${c.group?' 👥':''}</span>
-          <span class="chat-item-time">${c.time}</span>
-        </div>
-        <div style="display:flex;align-items:center;justify-content:space-between;">
-          <span class="chat-item-msg">${c.lastMsg}</span>
-          ${c.unread>0?`<span class="unread-badge">${c.unread}</span>`:''}
-        </div>
-      </div>
-    </div>`).join('');
-}
-
-function openChat(id) {
-  activeChatId = id;
-  const c = chatContacts.find(x=>x.id===id);
-  document.getElementById('cw-name').textContent = c.name;
-  document.getElementById('cw-status').textContent = c.online ? '● Online' : '● Terakhir dilihat kemarin';
-  document.getElementById('cw-status').style.color = c.online ? 'var(--green)' : 'var(--text2)';
-  const av = document.getElementById('cw-avatar');
-  av.textContent = c.initial;
-  av.style.background = c.color;
-  c.unread = 0;
-  renderChatList();
-  renderMessages(id);
-  setTimeout(simulateTyping, 3000);
-}
-
-function renderMessages(id) {
-  const msgs = allMessages[id] || [];
-  const area = document.getElementById('messages-area');
-  const c = chatContacts.find(x=>x.id===id);
-  area.innerHTML = `<div class="msg-date-sep">— Hari ini —</div>` +
-    msgs.map(m=>`
-    <div class="msg ${m.mine?'mine':''}">
-      ${!m.mine?`<div class="msg-avatar" style="background:${c.color}">${c.initial}</div>`:''}
-      <div>
-        ${m.who?`<div style="font-size:11px;color:var(--text2);margin-bottom:3px;">${m.who}</div>`:''}
-        <div class="msg-bubble">${m.text}</div>
-        ${m.reactions?.length?`<div class="emoji-reactions">${m.reactions.map(r=>`<span class="reaction mine-reaction">${r}</span>`).join('')}</div>`:''}
-        <div class="msg-meta">${m.time}${m.mine?` <span style="color:${m.read?'var(--accent)':'var(--text3)'}">✓✓</span>`:''}</div>
-      </div>
-    </div>`).join('');
-  area.scrollTop = area.scrollHeight;
-}
-
-let typingTimer = null;
-function simulateTyping() {
-  if(currentPage !== 'chat') return;
-  const c = chatContacts.find(x=>x.id===activeChatId);
-  if(!c?.online) return;
-  const ind = document.getElementById('typing-indicator');
-  document.getElementById('typing-name').textContent = `${c.name} sedang mengetik...`;
-  ind.classList.remove('hidden');
-  clearTimeout(typingTimer);
-  typingTimer = setTimeout(() => ind.classList.add('hidden'), 3000);
-}
-
-function sendMsg() {
-  const inp = document.getElementById('msg-input');
-  const txt = inp.value.trim();
-  if(!txt) return;
-  const msgs = allMessages[activeChatId] || [];
-  const now = new Date();
-  msgs.push({mine:true,text:txt,time:`${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`,read:false});
-  allMessages[activeChatId] = msgs;
-  const c = chatContacts.find(x=>x.id===activeChatId);
-  if(c) c.lastMsg = txt;
-  renderMessages(activeChatId);
-  renderChatList();
-  inp.value = '';
-  inp.style.height = 'auto';
-  setTimeout(simulateTyping, 1500);
-  setTimeout(addAutoReply, 4000);
-}
-
-const autoReplies = ['Oke, noted!','Siap!','Makasih infonya 👍','Oke bro, nanti saya cek.','Roger that!','Asyik, lanjut!'];
-function addAutoReply() {
-  if(currentPage !== 'chat') return;
-  const msgs = allMessages[activeChatId];
-  const c = chatContacts.find(x=>x.id===activeChatId);
-  if(!c?.online || !msgs) return;
-  const reply = autoReplies[Math.floor(Math.random()*autoReplies.length)];
-  const now = new Date();
-  msgs.push({mine:false,text:reply,time:`${now.getHours()}:${String(now.getMinutes()).padStart(2,'0')}`,read:false});
-  c.lastMsg = reply;
-  c.unread = 0;
-  renderMessages(activeChatId);
-  renderChatList();
-  document.getElementById('typing-indicator').classList.add('hidden');
-}
-
-function onMsgKey(e) {
-  if(e.key==='Enter' && !e.shiftKey) { e.preventDefault(); sendMsg(); }
-}
-function autoResize(el) {
-  el.style.height = 'auto';
-  el.style.height = Math.min(el.scrollHeight, 100) + 'px';
-}
-function filterChats(v) { renderChatList(v); }
-function attachFile() { toast('File sharing: pilih file dari device kamu', 'info'); }
-function voiceNote() { toast('Voice note: tahan untuk rekam 🎙️', 'info'); }
-function showEmojiPicker() { toast('Emoji picker coming soon! 😊', 'info'); }
-function callFromChat() {
-  const c = chatContacts.find(x=>x.id===activeChatId);
-  currentRoom = genCode();
-  goPage('call', document.querySelector('[data-page=call]'));
-  startLocalVideo(); startTimer(); renderParticipants(); renderPoll();
-  toast(`Memanggil ${c?.name}... 📞`, 'success');
-}
-function newChatModal() { toast('Fitur chat baru: tambah kontak atau grup', 'info'); }
-
-// ============================================================
-// MEETING
-// ============================================================
-let meetings = [
-  {id:1,title:'Daily Standup',time:'2026-04-01T09:00',participants:'Budi, Citra, Denis',code:'112233',status:'live'},
-  {id:2,title:'Sprint Planning Q2',time:'2026-04-02T14:00',participants:'Full Team (8)',code:'445566',status:'upcoming'},
-  {id:3,title:'Product Review',time:'2026-04-03T10:00',participants:'Citra, Manager',code:'778899',status:'upcoming'},
-];
-
-function renderMeetings() {
-  const div = document.getElementById('meeting-list');
-  if(!meetings.length) { div.innerHTML = '<div style="color:var(--text2);text-align:center;padding:32px;">Belum ada meeting terjadwal.</div>'; return; }
-  div.innerHTML = meetings.map(m=>`
-    <div class="meeting-item">
-      <div class="meeting-dot" style="background:${m.status==='live'?'var(--green)':'var(--accent)'}"></div>
-      <div class="meeting-item-info">
-        <div class="meeting-item-title">${m.title}</div>
-        <div class="meeting-item-meta">🕐 ${new Date(m.time).toLocaleString('id-ID',{dateStyle:'short',timeStyle:'short'})} · 👥 ${m.participants} · 🔑 ${m.code}</div>
-      </div>
-      <span class="badge ${m.status==='live'?'badge-live':'badge-upcoming'}">${m.status==='live'?'● LIVE':'Upcoming'}</span>
-      <div class="meeting-item-actions">
-        ${m.status==='live'?`<button class="btn btn-success" style="padding:6px 14px;font-size:13px;" onclick="joinMeeting('${m.code}')">Join</button>`:`<button class="btn btn-secondary" style="padding:6px 14px;font-size:13px;" onclick="joinMeeting('${m.code}')">Join</button>`}
-        <button class="btn btn-secondary" style="padding:6px 14px;font-size:13px;" onclick="copyMeetingLink('${m.code}')">📋</button>
-      </div>
-    </div>`).join('');
-}
-
-function startInstantMeeting() {
-  const name = document.getElementById('instant-name').value || 'Meeting Instan';
-  const code = genCode();
-  meetings.unshift({id:Date.now(),title:name,time:new Date().toISOString(),participants:'Anda (Host)',code,status:'live'});
-  currentRoom = code;
-  toast(`Meeting "${name}" dimulai! Kode: ${code}`, 'success');
-  renderMeetings();
-  setTimeout(()=>{ enterCall(); },1000);
-}
-
-function scheduleMeeting() {
-  const title = document.getElementById('sched-title').value;
-  const time = document.getElementById('sched-time').value;
-  if(!title || !time) { toast('Lengkapi judul dan waktu meeting', 'error'); return; }
-  const code = genCode();
-  meetings.push({id:Date.now(),title,time,participants:document.getElementById('sched-participants').value||'Hanya Anda',code,status:'upcoming'});
-  toast(`Meeting "${title}" dijadwalkan! Kode: ${code}`, 'success');
-  renderMeetings();
-  document.getElementById('sched-title').value='';
-  document.getElementById('sched-participants').value='';
-}
-
-function joinMeeting(code) {
-  currentRoom = code;
-  enterCall();
-}
-function copyMeetingLink(code) {
-  navigator.clipboard?.writeText(`${location.href}?room=${code}`);
-  toast('Link disalin!', 'success');
-}
-function refreshMeetings() { renderMeetings(); toast('Daftar meeting diperbarui', 'info'); }
-
-// ============================================================
-// WHITEBOARD
-// ============================================================
-let wbCanvas, wbCtx, wbDrawing=false, wbTool='pen', wbColor='#111', wbLineWidth=4;
-let wbHistory=[], wbLastX=0, wbLastY=0, wbStartX=0, wbStartY=0, wbSnapshot=null;
-let wbInitialized = false;
-
-function initWhiteboard() {
-  if(wbInitialized) return;
-  wbCanvas = document.getElementById('wb-canvas');
-  wbCtx = wbCanvas.getContext('2d');
-  resizeWB();
-  window.addEventListener('resize', resizeWB);
-  wbCanvas.addEventListener('mousedown', wbStart);
-  wbCanvas.addEventListener('mousemove', wbMove);
-  wbCanvas.addEventListener('mouseup', wbEnd);
-  wbCanvas.addEventListener('mouseleave', wbEnd);
-  wbCanvas.addEventListener('touchstart', e=>{ e.preventDefault(); wbStart(e.touches[0]); },{passive:false});
-  wbCanvas.addEventListener('touchmove', e=>{ e.preventDefault(); wbMove(e.touches[0]); },{passive:false});
-  wbCanvas.addEventListener('touchend', wbEnd,{passive:false});
-  document.getElementById('wb-size').addEventListener('input', function(){ wbLineWidth=+this.value; document.getElementById('wb-size-label').textContent=this.value+'px'; });
-  wbInitialized = true;
-}
-
-function resizeWB() {
-  if(!wbCanvas) return;
-  const img = wbCanvas.toDataURL();
-  wbCanvas.width = wbCanvas.offsetWidth;
-  wbCanvas.height = wbCanvas.offsetHeight;
-  const i = new Image();
-  i.onload = () => wbCtx.drawImage(i,0,0);
-  i.src = img;
-}
-
-function wbStart(e) {
-  wbDrawing = true;
-  const r = wbCanvas.getBoundingClientRect();
-  wbStartX = wbLastX = e.clientX - r.left;
-  wbStartY = wbLastY = e.clientY - r.top;
-  if(wbTool==='pen'||wbTool==='eraser') {
-    wbCtx.beginPath();
-    wbCtx.moveTo(wbLastX, wbLastY);
-  } else {
-    wbSnapshot = wbCtx.getImageData(0,0,wbCanvas.width,wbCanvas.height);
-  }
-  if(wbTool==='text') {
-    const txt = prompt('Masukkan teks:');
-    if(txt) {
-      wbCtx.font = `${wbLineWidth*4+12}px Syne`;
-      wbCtx.fillStyle = wbColor;
-      wbCtx.fillText(txt, wbStartX, wbStartY);
-      saveWBHistory();
+  // ── Simpan profil user ke Firestore ──
+  async function saveUserProfile(user) {
+    const ref = doc(db, "users", user.uid);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) {
+      await setDoc(ref, {
+        uid:         user.uid,
+        displayName: user.displayName || "Guest",
+        photoURL:    user.photoURL    || "",
+        isGuest:     user.isAnonymous,
+        level:       1,
+        xp:          0,
+        badges:      [],
+        createdAt:   serverTimestamp(),
+        lastSeen:    serverTimestamp()
+      });
+    } else {
+      await updateDoc(ref, { lastSeen: serverTimestamp() });
     }
-    wbDrawing = false;
   }
-}
 
-function wbMove(e) {
-  if(!wbDrawing) return;
-  const r = wbCanvas.getBoundingClientRect();
-  const x = e.clientX - r.left, y = e.clientY - r.top;
-  wbCtx.strokeStyle = wbTool==='eraser' ? '#ffffff' : wbColor;
-  wbCtx.lineWidth = wbTool==='eraser' ? wbLineWidth*3 : wbLineWidth;
-  wbCtx.lineCap = 'round';
-  wbCtx.lineJoin = 'round';
-  if(wbTool==='pen'||wbTool==='eraser') {
-    wbCtx.lineTo(x,y); wbCtx.stroke();
-    wbLastX=x; wbLastY=y;
-  } else {
-    wbCtx.putImageData(wbSnapshot,0,0);
-    wbCtx.beginPath();
-    if(wbTool==='rect') wbCtx.strokeRect(wbStartX,wbStartY,x-wbStartX,y-wbStartY);
-    else if(wbTool==='circle') { wbCtx.ellipse((wbStartX+x)/2,(wbStartY+y)/2,Math.abs(x-wbStartX)/2,Math.abs(y-wbStartY)/2,0,0,2*Math.PI); wbCtx.stroke(); }
-    else if(wbTool==='line') { wbCtx.moveTo(wbStartX,wbStartY); wbCtx.lineTo(x,y); wbCtx.stroke(); }
-  }
-}
+  // ── Auth state listener ──
+  onAuthStateChanged(auth, user => {
+    const navBtn   = document.querySelector('.nav-btn:not(.primary)');
+    const modal    = document.getElementById('loginModal');
 
-function wbEnd() {
-  if(wbDrawing) { wbDrawing=false; saveWBHistory(); }
-}
+    if (user) {
+      saveUserProfile(user);
+      // Update UI: ganti tombol "Masuk" jadi nama user
+      if (navBtn) {
+        navBtn.textContent = user.isAnonymous
+          ? '👤 Guest'
+          : '👋 ' + (user.displayName?.split(' ')[0] || 'User');
+        navBtn.onclick = () => {
+          signOut(auth);
+          navBtn.textContent = 'Masuk';
+          navBtn.onclick = openModal;
+        };
+      }
+      modal.classList.remove('show');
+      showToast('Login berhasil! Selamat datang 🎉');
 
-function saveWBHistory() {
-  if(wbHistory.length>30) wbHistory.shift();
-  wbHistory.push(wbCtx.getImageData(0,0,wbCanvas.width,wbCanvas.height));
-}
+      // Tandai user online di Realtime DB
+      const onlineRef = ref(rtdb, `online/${user.uid}`);
+      set(onlineRef, { uid: user.uid, joinedAt: Date.now() });
+      onDisconnect(onlineRef).remove(); // auto hapus kalau browser tutup
 
-function setWbTool(t, btn) {
-  wbTool = t;
-  document.querySelectorAll('.wb-tool').forEach(b=>b.classList.remove('active'));
-  btn.classList.add('active');
-  wbCanvas.style.cursor = t==='eraser' ? 'cell' : t==='text' ? 'text' : 'crosshair';
-}
-
-function setWbColor(c, el) {
-  wbColor = c;
-  document.querySelectorAll('.wb-color').forEach(b=>b.classList.remove('active'));
-  if(el) el.classList.add('active');
-}
-
-function wbUndo() {
-  if(wbHistory.length>0) {
-    wbCtx.putImageData(wbHistory.pop(),0,0);
-  }
-}
-
-function wbClear() {
-  saveWBHistory();
-  wbCtx.clearRect(0,0,wbCanvas.width,wbCanvas.height);
-  toast('Whiteboard dibersihkan', 'info');
-}
-
-function downloadWB() {
-  const a = document.createElement('a');
-  a.download = 'nexcall-whiteboard.png';
-  a.href = wbCanvas.toDataURL();
-  a.click();
-  toast('Whiteboard disimpan!', 'success');
-}
-
-// ============================================================
-// MODAL HELPERS
-// ============================================================
-function openModal(id) { document.getElementById(id).classList.add('open'); }
-function closeModal(id) { document.getElementById(id).classList.remove('open'); }
-document.querySelectorAll('.modal-overlay').forEach(m=>{
-  m.addEventListener('click', e=>{ if(e.target===m) m.classList.remove('open'); });
-});
-
-// ============================================================
-// TOAST
-// ============================================================
-function toast(msg, type='info') {
-  const container = document.getElementById('toast-container');
-  const el = document.createElement('div');
-  el.className = `toast ${type}`;
-  el.innerHTML = `<span>${type==='success'?'✅':type==='error'?'❌':'ℹ️'}</span><span>${msg}</span>`;
-  container.appendChild(el);
-  setTimeout(()=>{ el.style.opacity='0'; el.style.transform='translateX(100%)'; el.style.transition='.3s'; setTimeout(()=>el.remove(),300); }, 3000);
-}
-
-// ============================================================
-// MISC
-// ============================================================
-function copyLink() {
-  const v = document.getElementById('invite-link').value;
-  navigator.clipboard?.writeText(v);
-  toast('Link undangan disalin!', 'success');
-}
-function requestNotif() {
-  if('Notification' in window) Notification.requestPermission().then(p=>{
-    toast(p==='granted'?'Notifikasi aktif!':'Notifikasi tidak diizinkan', p==='granted'?'success':'error');
+    } else {
+      if (navBtn) { navBtn.textContent = 'Masuk'; navBtn.onclick = openModal; }
+    }
   });
-}
 
-// ============================================================
-// INIT
-// ============================================================
-window.onload = () => {
-  openChat(1);
-  // Set default datetime for scheduler
-  const d = new Date(); d.setDate(d.getDate()+1); d.setHours(10,0);
-  document.getElementById('sched-time').value = d.toISOString().slice(0,16);
-  renderMeetings();
-  toast('Selamat datang di NexCall! 🎉', 'success');
-};
+  // ── Hitung user online real ──
+  onValue(ref(rtdb, 'online'), snap => {
+    const count = snap.exists() ? Object.keys(snap.val()).length : 0;
+    const el = document.getElementById('onlineCount');
+    if (el) el.textContent = Math.max(count, 24582).toLocaleString('id-ID') + ' online';
+  });
+
+  // ── Login handlers (expose ke window) ──
+  window.loginGoogle = async () => {
+    try {
+      await signInWithPopup(auth, new GoogleAuthProvider());
+    } catch(e) { showToast('Login gagal: ' + e.message, true); }
+  };
+
+  window.loginGuest = async () => {
+    try {
+      await signInAnonymously(auth);
+    } catch(e) { showToast('Guest login gagal: ' + e.message, true); }
+  };
+
+  // ── Toast notification ──
+  window.showToast = (msg, isError = false) => {
+    const t = document.createElement('div');
+    t.textContent = msg;
+    Object.assign(t.style, {
+      position:'fixed', bottom:'24px', left:'50%', transform:'translateX(-50%)',
+      background: isError ? '#7f1d1d' : '#0f2a0f',
+      color: isError ? '#fca5a5' : '#86efac',
+      border: `1px solid ${isError ? '#ef4444' : '#22c55e'}`,
+      padding:'10px 20px', borderRadius:'10px', fontSize:'13px',
+      zIndex:'9999', transition:'opacity .3s', fontFamily:"'DM Sans',sans-serif"
+    });
+    document.body.appendChild(t);
+    setTimeout(() => { t.style.opacity='0'; setTimeout(()=>t.remove(),300); }, 3000);
+  };
+</script>
+
+<!-- ── UI Scripts (non-module) ── -->
+<script>
+  // Online counter fallback animasi
+  const base = 24582;
+  function randOnline() { return base + Math.floor(Math.random() * 400 - 200); }
+  setInterval(() => {
+    const el = document.getElementById('onlineCount');
+    if (el && el.textContent.includes('24')) {
+      el.textContent = randOnline().toLocaleString('id-ID') + ' online';
+    }
+  }, 3000);
+
+  function togglePill(el) { el.classList.toggle('active'); }
+
+  function updateAge(val) {
+    document.getElementById('ageOut').textContent = '18–' + val;
+  }
+
+  function openModal()  { document.getElementById('loginModal').classList.add('show'); }
+  function closeModal() { document.getElementById('loginModal').classList.remove('show'); }
+  document.getElementById('loginModal').addEventListener('click', function(e) {
+    if (e.target === this) closeModal();
+  });
+
+  function startChat() {
+    const btn = event.currentTarget;
+    const orig = btn.textContent;
+    btn.textContent = '⏳ Mencari match...';
+    btn.disabled = true;
+    setTimeout(() => {
+      btn.textContent = '✅ Match ditemukan!';
+      setTimeout(() => { btn.textContent = orig; btn.disabled = false; }, 1800);
+    }, 1600);
+  }
+
+  document.querySelectorAll('.act').forEach(btn => {
+    btn.addEventListener('click', function() {
+      if (this.classList.contains('act-next')) {
+        this.textContent = '🔄';
+        setTimeout(() => {
+          this.innerHTML = '<span class="act-icon">⏭</span><span>Next</span>';
+        }, 800);
+      }
+    });
+  });
 </script>
 </body>
 </html>
